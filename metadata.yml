@@ -1,5 +1,5 @@
 # Package meta-data.
-NAME: $package
+NAME: cfgtools
 VERSION:
 SUMMARY: A template repository for building python packages.
 HOMEPAGE: https://github.com/Chitaoji/$package/
