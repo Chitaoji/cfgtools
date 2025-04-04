@@ -2,7 +2,7 @@
 Contains typing classes.
 
 NOTE: this module is private. All functions and objects are available in the main
-`$package` namespace - use that instead.
+`cfgtools` namespace - use that instead.
 
 """
 
@@ -12,3 +12,6 @@ logging.warning(
     "importing from '._typing' - this module is not intended for direct import, "
     "therefore unexpected errors may occur"
 )
+
+Data = int | float | str
+Config = dict[Data, "Config"] | list["Config"] | Data
