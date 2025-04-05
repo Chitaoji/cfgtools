@@ -7,6 +7,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 """
 
 import logging
+from typing import Literal
 
 logging.warning(
     "importing from '._typing' - this module is not intended for direct import, "
@@ -15,3 +16,4 @@ logging.warning(
 
 Data = int | float | str
 Config = dict[Data, "Config"] | list["Config"] | Data
+ConfigFileFormat = Literal["yaml", "yml"]

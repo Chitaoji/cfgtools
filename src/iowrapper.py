@@ -9,10 +9,19 @@ NOTE: this module is private. All functions and objects are available in the mai
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Self
 
-import yaml
+from .saving import WRITING_METHOD_MAPPING
 
 if TYPE_CHECKING:
-    from ._typing import Config, Data
+    from ._typing import Config, ConfigFileFormat, Data
+
+__all__ = ["ConfigIOWrapper"]
+
+SUFFIX_MAPPING = {
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".pickle": "pickle",
+    ".pkl": "pickle",
+}
 
 
 class ConfigIOWrapper:
@@ -21,102 +30,140 @@ class ConfigIOWrapper:
 
     Parameters
     ----------
-    config : Config
+    obj : Config
         Config object.
+    fmt : ConfigFileFormat
+        File format.
     path : str | Path | None, optional
         File path, by default None.
     encoding : str | None, optional
-        The name of the encoding used to decode or encode the file,
-        by default None.
+        The name of the encoding used to decode or encode the file
+        (if needed), by default None.
 
     """
 
     def __init__(
         self,
-        config: "Config",
+        obj: "Config",
+        fmt: "ConfigFileFormat",
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
-        self.config = config
+        self.obj = obj
+        self.fmt = fmt
         self.path = path
         self.encoding = encoding
 
     def __getitem__(self, __key: "Data") -> "Config":
-        if isinstance(self.config, (list, dict)):
-            return ConfigIOWrapper(self.config[__key], encoding=self.encoding)
-        raise TypeError("the config object is not subscriptable")
+        if isinstance(self.obj, (list, dict)):
+            return ConfigIOWrapper(self.obj[__key], self.fmt, encoding=self.encoding)
+        raise TypeError(f"{self.__obj_desc()} is not subscriptable")
 
     def __setitem__(self, __key: "Data", __value: "Config"):
-        if isinstance(self.config, (list, dict)):
-            self.config[__key] = __value
+        if isinstance(self.obj, (list, dict)):
+            self.obj[__key] = __value
         else:
-            raise TypeError("the config object does not support item assignment")
+            raise TypeError(f"{self.__obj_desc()} does not support item assignment")
 
     def __repr__(self) -> str:
-        return repr(self.config)
+        return repr(self.obj)
 
     def __enter__(self) -> Self:
         if self.path is None:
             raise TypeError(
-                "failed to open the wrapper because it's a children node of the "
-                "original wrapper - try to open the original wrapper instead"
+                "failed to access the method '.__enter__()' because this wrapper "
+                "is a children node of the original wrapper - try on the original "
+                "wrapper instead"
             )
         return self
 
     def __exit__(self, *args) -> None:
         self.save()
 
-    def save(self, path: str | Path | None = None) -> None:
+    def save(
+        self,
+        path: str | Path | None = None,
+        fmt: "ConfigFileFormat | None" = None,
+        encoding: str | None = None,
+    ) -> None:
         """
         Save the config.
 
         Parameters
         ----------
         path : str | Path | None, optional
-            File path, by default None. If no path is specified, use `self.path`
+            File path, by default None. If not specified, use `self.path`
             instead.
+        fmt : ConfigFileFormat | None, optional
+            File format to save, by default None. If not specified, the
+            file format will be automatically decided.
+        encoding : str | None, optional
+            The name of the encoding used to decode or encode the file
+            (if needed), by default None. If not specified, use
+            `self.encoding` instead.
 
         Raises
         ------
-        TypeError
+        ValueError
             Raised when both path and `self.path` are None.
+        FileFormatError
+            Raised when the config file format is not supported.
 
         """
         if path is None:
             if self.path is None:
-                raise TypeError(
+                raise ValueError(
                     "failed to save the config because no path is specified"
                 )
             path = self.path
-        with open(path, "w", encoding=self.encoding) as f:
-            yaml.dump(self.config, f, sort_keys=False)
+        if fmt is None:
+            if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
+                fmt = SUFFIX_MAPPING[suffix]
+            else:
+                fmt = self.fmt
+        encoding = self.encoding if encoding is None else encoding
+        if fmt in WRITING_METHOD_MAPPING:
+            WRITING_METHOD_MAPPING[fmt](self.obj, path, encoding=encoding)
+        else:
+            raise FileFormatError(f"unsupported config file format: {fmt!r}")
 
     def keys(self) -> "Iterable[Data]":
         """Provide a view of the config object's keys if it's a dict."""
-        if isinstance(self.config, dict):
-            return self.config.keys()
-        raise TypeError("the config object is not a dict")
+        if isinstance(self.obj, dict):
+            return self.obj.keys()
+        raise TypeError(f"{self.__obj_desc()} is not a dict")
 
     def values(self) -> "Iterable[Config]":
         """Provide a view of the config object's values if it's a dict."""
-        if isinstance(self.config, dict):
-            return self.config.values()
-        raise TypeError("the config object is not a dict")
+        if isinstance(self.obj, dict):
+            return self.obj.values()
+        raise TypeError(f"{self.__obj_desc()} is not a dict")
 
     def items(self) -> "Iterable[tuple[Data, Config]]":
         """Provide a view of the config object's items if it's a dict."""
-        if isinstance(self.config, dict):
-            return self.config.items()
-        raise TypeError("the config object is not a dict")
+        if isinstance(self.obj, dict):
+            return self.obj.items()
+        raise TypeError(f"{self.__obj_desc()} is not a dict")
 
     def append(self, __object: "Config") -> None:
         """Append object to the end of the config object if it's a list."""
-        if isinstance(self.config, list):
-            return self.config.append(__object)
-        raise TypeError("the config object is not a list")
+        if isinstance(self.obj, list):
+            return self.obj.append(__object)
+        raise TypeError(f"{self.__obj_desc()} is not a list")
 
     def extend(self, __object: "Iterable[Config]") -> None:
         """Extend the config object if it's a list."""
-        if isinstance(self.config, list):
-            return self.config.extend(__object)
-        raise TypeError("the config object is not a list")
+        if isinstance(self.obj, list):
+            return self.obj.extend(__object)
+        raise TypeError(f"{self.__obj_desc()} is not a list")
+
+    def type(self) -> str:
+        """Return the type of the config object."""
+        return self.obj.__class__.__name__
+
+    def __obj_desc(self) -> str:
+        return f"the config object (of type {self.type()!r})"
+
+
+class FileFormatError(Exception):
+    """Raised when file format is not supported."""

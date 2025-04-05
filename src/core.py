@@ -8,25 +8,24 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 from pathlib import Path
 
-import yaml
+from .iowrapper import SUFFIX_MAPPING, ConfigIOWrapper, FileFormatError
+from .reading import READING_METHOD_MAPPING
 
-from .iowrapper import ConfigIOWrapper
-
-__all__ = ["autoread", "read_yaml"]
+__all__ = ["autoread"]
 
 
-def autoread(path: Path, encoding: str | None = None) -> ConfigIOWrapper:
+def autoread(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Open a config file. The format of the file is automatically
     detected.
 
     Parameters
     ----------
-    path : Path
+    path : str | Path
         Yaml file path.
     encoding : str | None, optional
-        The name of the encoding used to decode or encode the file,
-        by default None.
+        The name of the encoding used to decode or encode the file
+        (if needed), by default None.
 
     Returns
     --------
@@ -34,28 +33,17 @@ def autoread(path: Path, encoding: str | None = None) -> ConfigIOWrapper:
         A wrapper for reading and writing config files.
 
     """
-    return read_yaml(path, encoding=encoding)
-
-
-def read_yaml(path: Path, encoding: str | None = None) -> ConfigIOWrapper:
-    """
-    Read a yaml file.
-
-    Parameters
-    ----------
-    path : Path
-        Yaml file path.
-    encoding : str | None, optional
-        The name of the encoding used to decode or encode the file,
-        by default None.
-
-    Returns
-    --------
-    ConfigIOWrapper
-        A wrapper for reading and writing config files.
-
-    """
-    with open(path, "r", encoding=encoding) as f:
-        cfg = yaml.safe_load(f)
-        cfg = {} if cfg is None else cfg
-    return ConfigIOWrapper(cfg, path=path, encoding=encoding)
+    if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
+        default_method = SUFFIX_MAPPING[suffix]
+        cfg = READING_METHOD_MAPPING[default_method](path, encoding=encoding)
+        if cfg is not None:
+            return cfg
+        for k, m in READING_METHOD_MAPPING.items():
+            if k != default_method:
+                if (cfg := m(path, encoding=encoding)) is not None:
+                    return cfg
+    else:
+        for m in READING_METHOD_MAPPING.values():
+            if (cfg := m(path, encoding=encoding)) is not None:
+                return cfg
+    raise FileFormatError(f"failed to read config file: '{path}'")
