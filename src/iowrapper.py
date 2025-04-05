@@ -83,7 +83,8 @@ class ConfigIOWrapper:
     def save(
         self,
         path: str | Path | None = None,
-        fmt: "ConfigFileFormat | None" = None,
+        __format: "ConfigFileFormat | None" = None,
+        /,
         encoding: str | None = None,
     ) -> None:
         """
@@ -94,7 +95,7 @@ class ConfigIOWrapper:
         path : str | Path | None, optional
             File path, by default None. If not specified, use `self.path`
             instead.
-        fmt : ConfigFileFormat | None, optional
+        __format : ConfigFileFormat | None, optional
             File format to save, by default None. If not specified, the
             file format will be automatically decided.
         encoding : str | None, optional
@@ -116,16 +117,16 @@ class ConfigIOWrapper:
                     "failed to save the config because no path is specified"
                 )
             path = self.path
-        if fmt is None:
+        if __format is None:
             if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
-                fmt = SUFFIX_MAPPING[suffix]
+                __format = SUFFIX_MAPPING[suffix]
             else:
-                fmt = self.fmt
+                __format = self.fmt
         encoding = self.encoding if encoding is None else encoding
-        if fmt in WRITING_METHOD_MAPPING:
-            WRITING_METHOD_MAPPING[fmt](self.obj, path, encoding=encoding)
+        if __format in WRITING_METHOD_MAPPING:
+            WRITING_METHOD_MAPPING[__format](self.obj, path, encoding=encoding)
         else:
-            raise FileFormatError(f"unsupported config file format: {fmt!r}")
+            raise FileFormatError(f"unsupported config file format: {__format!r}")
 
     def keys(self) -> "Iterable[Data]":
         """Provide a view of the config object's keys if it's a dict."""
