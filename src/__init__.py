@@ -1,14 +1,13 @@
 """
-# $package
-A template repository for building python packages. Please replace `$package` with the package's
-name.
+# cfgtools
+Provides tools for managing config files.
 
 ## See Also
 ### Github repository
-* https://github.com/Chitaoji/$package/
+* https://github.com/Chitaoji/cfgtools/
 
 ### PyPI project
-* https://pypi.org/project/$package/
+* https://pypi.org/project/cfgtools/
 
 ## License
 This project falls under the BSD 3-Clause License.

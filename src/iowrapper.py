@@ -21,6 +21,7 @@ SUFFIX_MAPPING = {
     ".yml": "yaml",
     ".pickle": "pickle",
     ".pkl": "pickle",
+    ".json": "json",
 }
 
 

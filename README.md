@@ -1,25 +1,25 @@
-# *auto-generated*
-A template repository for building python packages. Please replace `$package` with the package's name in `metadata.yml`.
+# cfgtools
+Provides tools for managing config files.
 
 ## Installation
 ```sh
-*auto-generated*
+$ pip install cfgtools
 ```
 
 ## Requirements
 ```txt
-*auto-generated*
+yaml
 ```
 
 ## See Also
 ### Github repository
-* *auto-generated*
+* https://github.com/Chitaoji/cfgtools/
 
 ### PyPI project
-* *auto-generated*
+* https://pypi.org/project/cfgtools/
 
 ## License
-*auto-generated*
+This project falls under the BSD 3-Clause License.
 
 ## History
 ### v0.0.0

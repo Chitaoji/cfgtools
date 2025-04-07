@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import json
 import pickle
 from pathlib import Path
 
@@ -23,7 +24,7 @@ def read_yaml(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     Parameters
     ----------
     path : str | Path
-        Yaml file path.
+        Path of the yaml file.
     encoding : str | None, optional
         The name of the encoding used to decode or encode the file,
         by default None.
@@ -49,14 +50,44 @@ def _try_read_yaml(
         return None
 
 
-def read_pickle(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_pickle(path: str | Path) -> ConfigIOWrapper:
     """
     Read a pickle file.
 
     Parameters
     ----------
     path : str | Path
-        Yaml file path.
+        Path of the pickle file.
+
+    Returns
+    --------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+    with open(path, "rb") as f:
+        cfg = pickle.load(f)
+        cfg = {} if cfg is None else cfg
+    return ConfigIOWrapper(cfg, "pickle", path=path)
+
+
+def _try_read_pickle(
+    path: str | Path, encoding: str | None = None
+) -> ConfigIOWrapper | None:
+    try:
+        return read_pickle(path)
+    except pickle.UnpicklingError:
+        return None
+    
+    
+def read_json(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+    """
+    Read a json file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the json file.
     encoding : str | None, optional
         The name of the encoding used to decode or encode the file,
         by default None.
@@ -67,24 +98,21 @@ def read_pickle(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
         A wrapper for reading and writing config files.
 
     """
-    with open(path, "rb", encoding=encoding) as f:
-        cfg = pickle.load(f)
+    with open(path, "r", encoding=encoding) as f:
+        cfg = json.load(f)
         cfg = {} if cfg is None else cfg
-    return ConfigIOWrapper(cfg, "yaml", path=path, encoding=encoding)
+    return ConfigIOWrapper(cfg, "json", path=path, encoding=encoding)
 
 
-def _try_read_pickle(
+def _try_read_json(
     path: str | Path, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
-    try:
-        return read_pickle(path, encoding=encoding)
-    except pickle.UnpicklingError:
-        return None
-
+    return read_json(path, encoding=encoding)
 
 READING_METHOD_MAPPING = {
     "yaml": _try_read_yaml,
     "yml": _try_read_yaml,
     "pickle": _try_read_pickle,
     "pkl": _try_read_pickle,
+    "json": _try_read_json,
 }

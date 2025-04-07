@@ -22,7 +22,7 @@ def autoread(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     Parameters
     ----------
     path : str | Path
-        Yaml file path.
+        File path.
     encoding : str | None, optional
         The name of the encoding used to decode or encode the file
         (if needed), by default None.

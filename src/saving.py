@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import json
 import pickle
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -31,10 +32,17 @@ def _to_pickle(
     with open(path, "wb", encoding=encoding) as f:
         pickle.dump(obj, f)
 
-
+def _to_json(
+    obj: "Config", path: str | Path | None, encoding: str | None = None
+) -> None:
+    with open(path, "w", encoding=encoding) as f:
+        json.dump(obj, f)
+        
+        
 WRITING_METHOD_MAPPING = {
     "yaml": _to_yaml,
     "yml": _to_yaml,
     "pickle": _to_pickle,
     "pkl": _to_pickle,
+    "json": _to_json,
 }

@@ -16,4 +16,4 @@ logging.warning(
 
 Data = int | float | str
 Config = dict[Data, "Config"] | list["Config"] | Data
-ConfigFileFormat = Literal["yaml", "yml"]
+ConfigFileFormat = Literal["yaml", "yml", "pickle", "pkl"]
