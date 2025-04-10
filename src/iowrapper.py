@@ -41,7 +41,27 @@ class ConfigIOWrapper:
         The name of the encoding used to decode or encode the file
         (if needed), by default None.
 
+    Raises
+    ------
+    TypeError
+        Raised when the type of config object is invalid.
+
     """
+
+    def __new__(cls, obj: "Config", *args, **kwargs) -> Self:
+        if obj is None:
+            obj = {}
+        if isinstance(obj, dict):
+            new_class = _DictConfigIOWrapper
+        elif isinstance(obj, list):
+            new_class = _ListConfigIOWrapper
+        elif isinstance(obj, (bool, int, float, str)):
+            new_class = ConfigIOWrapper
+        else:
+            raise TypeError(
+                f"invalid type of config object: {obj.__class__.__name__!r}"
+            )
+        return super().__new__(new_class)
 
     def __init__(
         self,
@@ -56,7 +76,7 @@ class ConfigIOWrapper:
         self.path = path
         self.encoding = encoding
 
-    def __getitem__(self, __key: "Data") -> "Config":
+    def __getitem__(self, __key: "Data") -> Self:
         if isinstance(self.obj, (list, dict)):
             return ConfigIOWrapper(
                 self.obj[__key], self.fileformat, encoding=self.encoding

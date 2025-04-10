@@ -59,7 +59,6 @@ def read_yaml(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     encoding = detect_encoding(path) if encoding is None else encoding
     with open(path, "r", encoding=encoding) as f:
         cfg = yaml.safe_load(f)
-        cfg = {} if cfg is None else cfg
     return ConfigIOWrapper(cfg, "yaml", path=path, encoding=encoding)
 
 
@@ -89,7 +88,6 @@ def read_pickle(path: str | Path) -> ConfigIOWrapper:
     """
     with open(path, "rb") as f:
         cfg = pickle.load(f)
-        cfg = {} if cfg is None else cfg
     return ConfigIOWrapper(cfg, "pickle", path=path)
 
 
@@ -121,7 +119,6 @@ def read_json(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     encoding = detect_encoding(path) if encoding is None else encoding
     with open(path, "r", encoding=encoding) as f:
         cfg = json.load(f)
-        cfg = {} if cfg is None else cfg
     return ConfigIOWrapper(cfg, "json", path=path, encoding=encoding)
 
 
