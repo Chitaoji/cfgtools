@@ -15,7 +15,7 @@ from .reading import READING_METHOD_MAPPING, detect_encoding
 if TYPE_CHECKING:
     from ._typing import ConfigObject
 
-__all__ = ["read_config", "read", "config"]
+__all__ = ["read_config", "config"]
 
 
 def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
@@ -52,9 +52,6 @@ def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
             if (cfg := m(path, encoding=encoding)) is not None:
                 return cfg
     raise FileFormatError(f"failed to read config file: '{path}'")
-
-
-read = read_config
 
 
 def config(obj: "ConfigObject") -> ConfigIOWrapper:

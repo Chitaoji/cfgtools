@@ -49,11 +49,11 @@ class ConfigIOWrapper:
     """
 
     def __new__(cls, obj: "ConfigObject", *args, **kwargs) -> Self:
-        if obj is None or isinstance(obj, dict):
+        if isinstance(obj, dict):
             new_class = _DictConfigIOWrapper
         elif isinstance(obj, list):
             new_class = _ListConfigIOWrapper
-        elif isinstance(obj, (bool, int, float, str)):
+        elif obj is None or isinstance(obj, (bool, int, float, str)):
             new_class = ConfigIOWrapper
         else:
             raise TypeError(
@@ -69,7 +69,7 @@ class ConfigIOWrapper:
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
-        self.obj = {} if obj is None else obj
+        self.obj = obj
         self.fileformat = fileformat
         self.path = path
         self.encoding = encoding
@@ -185,7 +185,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         super().__init__(obj, *args, **kwargs)
         new_obj: dict["DataObject", "ConfigObject"] = {}
         for k, v in self.obj.items():
-            if not isinstance(k, (bool, int, float, str, type(None))):
+            if k is not None and not isinstance(k, (bool, int, float, str)):
                 raise TypeError(f"invalid type of dict key: {k.__class__.__name__!r}")
             if isinstance(v, ConfigIOWrapper):
                 new_obj[k] = v
