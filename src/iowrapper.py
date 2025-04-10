@@ -183,7 +183,7 @@ class ConfigIOWrapper:
 class _DictConfigIOWrapper(ConfigIOWrapper):
     def __init__(self, obj: "ConfigObject", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
-        new_obj = {}
+        new_obj: dict["DataObject", "ConfigObject"] = {}
         for k, v in self.obj.items():
             if not isinstance(k, (bool, int, float, str, type(None))):
                 raise TypeError(f"invalid type of dict key: {k.__class__.__name__!r}")
@@ -212,23 +212,23 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
             + "})"
         )
 
-    def keys(self) -> "Iterable[DataObject]":
+    def keys(self) -> Iterable["DataObject"]:
         return self.obj.keys()
 
-    def values(self) -> "Iterable[ConfigObject]":
+    def values(self) -> Iterable["ConfigObject"]:
         return self.obj.values()
 
-    def items(self) -> "Iterable[tuple[DataObject, ConfigObject]]":
+    def items(self) -> Iterable[tuple["DataObject", "ConfigObject"]]:
         return self.obj.items()
 
     def to_object(self) -> "ConfigObject":
-        return {k: v.to_object() for k, v in self.items()}
+        return {k: v.to_object() for k, v in self.obj.items()}
 
 
 class _ListConfigIOWrapper(ConfigIOWrapper):
     def __init__(self, obj: "ConfigObject", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
-        new_obj = []
+        new_obj: list["ConfigObject"] = []
         for x in self.obj:
             if isinstance(x, ConfigIOWrapper):
                 new_obj.append(x)
@@ -241,6 +241,9 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
     def __str__(self) -> str:
         return f"{Config.__name__}([" + ", ".join([str(x) for x in self.obj]) + "])"
 
+    def __getitem__(self, __key: int) -> Self:
+        return self.obj[__key]
+
     def append(self, __object: "ConfigObject") -> None:
         if isinstance(__object, ConfigIOWrapper):
             self.obj.append(__object)
@@ -249,12 +252,14 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                 ConfigIOWrapper(__object, self.fileformat, encoding=self.encoding)
             )
 
-    def extend(self, __iterable: "Iterable[ConfigObject]") -> None:
+    def extend(self, __iterable: Iterable["ConfigObject"]) -> None:
         if isinstance(__iterable, _ListConfigIOWrapper):
             self.obj.extend(__iterable.obj)
         else:
             self.obj.extend(
-                ConfigIOWrapper(__iterable, self.fileformat, encoding=self.encoding).obj
+                ConfigIOWrapper(
+                    list(__iterable), self.fileformat, encoding=self.encoding
+                ).obj
             )
 
     def to_object(self) -> "ConfigObject":
@@ -262,20 +267,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
 
 class Config:
-    """
-    Initialize a new config object.
-
-    Parameters
-    ----------
-    obj : ConfigObject
-        Config object.
-
-    Returns
-    -------
-    ConfigIOWrapper
-        A wrapper for reading and writing config files.
-
-    """
+    """Default constructor for `ConfigIOWrapper`."""
 
     def __new__(cls, obj: "ConfigObject") -> ConfigIOWrapper:
         return ConfigIOWrapper(obj, "json")
