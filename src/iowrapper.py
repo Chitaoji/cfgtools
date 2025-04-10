@@ -33,7 +33,7 @@ class ConfigIOWrapper:
     ----------
     obj : Config
         Config object.
-    fmt : ConfigFileFormat
+    fileformat : ConfigFileFormat
         File format.
     path : str | Path | None, optional
         File path, by default None.
@@ -46,18 +46,21 @@ class ConfigIOWrapper:
     def __init__(
         self,
         obj: "Config",
-        fmt: "ConfigFileFormat",
+        fileformat: "ConfigFileFormat",
+        /,
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
         self.obj = obj
-        self.fmt = fmt
+        self.fileformat = fileformat
         self.path = path
         self.encoding = encoding
 
     def __getitem__(self, __key: "Data") -> "Config":
         if isinstance(self.obj, (list, dict)):
-            return ConfigIOWrapper(self.obj[__key], self.fmt, encoding=self.encoding)
+            return ConfigIOWrapper(
+                self.obj[__key], self.fileformat, encoding=self.encoding
+            )
         raise TypeError(f"{self.__obj_desc()} is not subscriptable")
 
     def __setitem__(self, __key: "Data", __value: "Config"):
@@ -84,7 +87,7 @@ class ConfigIOWrapper:
     def save(
         self,
         path: str | Path | None = None,
-        __format: "ConfigFileFormat | None" = None,
+        fileformat: "ConfigFileFormat | None" = None,
         /,
         encoding: str | None = None,
     ) -> None:
@@ -96,7 +99,7 @@ class ConfigIOWrapper:
         path : str | Path | None, optional
             File path, by default None. If not specified, use `self.path`
             instead.
-        __format : ConfigFileFormat | None, optional
+        fileformat : ConfigFileFormat | None, optional
             File format to save, by default None. If not specified, the
             file format will be automatically decided.
         encoding : str | None, optional
@@ -118,16 +121,16 @@ class ConfigIOWrapper:
                     "failed to save the config because no path is specified"
                 )
             path = self.path
-        if __format is None:
+        if fileformat is None:
             if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
-                __format = SUFFIX_MAPPING[suffix]
+                fileformat = SUFFIX_MAPPING[suffix]
             else:
-                __format = self.fmt
+                fileformat = self.fileformat
         encoding = self.encoding if encoding is None else encoding
-        if __format in WRITING_METHOD_MAPPING:
-            WRITING_METHOD_MAPPING[__format](self.obj, path, encoding=encoding)
+        if fileformat in WRITING_METHOD_MAPPING:
+            WRITING_METHOD_MAPPING[fileformat](self.obj, path, encoding=encoding)
         else:
-            raise FileFormatError(f"unsupported config file format: {__format!r}")
+            raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
     def keys(self) -> "Iterable[Data]":
         """Provide a view of the config object's keys if it's a dict."""
