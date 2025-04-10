@@ -13,7 +13,7 @@ from .iowrapper import SUFFIX_MAPPING, ConfigIOWrapper, FileFormatError
 from .reading import READING_METHOD_MAPPING, detect_encoding
 
 if TYPE_CHECKING:
-    from ._typing import Config
+    from ._typing import ConfigObject
 
 __all__ = ["read_config", "new_config", "read", "new"]
 
@@ -54,13 +54,13 @@ def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
     raise FileFormatError(f"failed to read config file: '{path}'")
 
 
-def new_config(obj: "Config") -> ConfigIOWrapper:
+def new_config(obj: "ConfigObject") -> ConfigIOWrapper:
     """
     Initialize a new config object.
 
     Parameters
     ----------
-    obj : Config
+    obj : ConfigObject
         Config object.
 
     Returns

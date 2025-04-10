@@ -14,27 +14,27 @@ from typing import TYPE_CHECKING
 import yaml
 
 if TYPE_CHECKING:
-    from ._typing import Config
+    from ._typing import ConfigObject
 
 __all__ = []
 
 
 def _to_yaml(
-    obj: "Config", path: str | Path | None, encoding: str | None = None
+    obj: "ConfigObject", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "w", encoding=encoding) as f:
         yaml.safe_dump(obj, f, sort_keys=False)
 
 
 def _to_pickle(
-    obj: "Config", path: str | Path | None, encoding: str | None = None
+    obj: "ConfigObject", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "wb", encoding=encoding) as f:
         pickle.dump(obj, f)
 
 
 def _to_json(
-    obj: "Config", path: str | Path | None, encoding: str | None = None
+    obj: "ConfigObject", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "w", encoding=encoding) as f:
         json.dump(obj, f)

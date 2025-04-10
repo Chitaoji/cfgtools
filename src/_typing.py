@@ -9,11 +9,18 @@ NOTE: this module is private. All functions and objects are available in the mai
 import logging
 from typing import Literal
 
+from .iowrapper import ConfigIOWrapper
+
 logging.warning(
     "importing from '._typing' - this module is not intended for direct import, "
     "therefore unexpected errors may occur"
 )
 
-Data = bool | int | float | str | None
-Config = dict[Data, "Config"] | list["Config"] | Data
+DataObject = bool | int | float | str | None
+ConfigObject = (
+    dict[DataObject, "ConfigObject"]
+    | list["ConfigObject"]
+    | DataObject
+    | ConfigIOWrapper
+)
 ConfigFileFormat = Literal["yaml", "yml", "pickle", "pkl"]
