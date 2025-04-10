@@ -23,4 +23,4 @@ ConfigObject = (
     | DataObject
     | ConfigIOWrapper
 )
-ConfigFileFormat = Literal["yaml", "yml", "pickle", "pkl"]
+ConfigFileFormat = Literal["json", "yaml", "yml", "pickle", "pkl"]

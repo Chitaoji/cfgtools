@@ -14,7 +14,7 @@ from .saving import WRITING_METHOD_MAPPING
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject, DataObject
 
-__all__ = ["ConfigIOWrapper"]
+__all__ = ["Config"]
 
 SUFFIX_MAPPING = {
     ".yaml": "yaml",
@@ -80,9 +80,6 @@ class ConfigIOWrapper:
     def __setitem__(self, __key: "DataObject", __value: "ConfigObject") -> None:
         raise TypeError(f"{self.__obj_desc()} does not support item assignment")
 
-    def __repr__(self) -> str:
-        return f"{repr(self.obj)}"
-
     def __enter__(self) -> Self:
         if self.path is None:
             raise TypeError(
@@ -94,6 +91,12 @@ class ConfigIOWrapper:
 
     def __exit__(self, *args) -> None:
         self.save()
+
+    def __repr__(self) -> str:
+        return f"{self.obj!r}"
+
+    def __str__(self) -> str:
+        return f"{Config.__name__}({self.obj!r})"
 
     def keys(self) -> "Iterable[DataObject]":
         """Provide a view of the config object's keys if it's a dict."""
@@ -201,6 +204,14 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
                 __value, self.fileformat, encoding=self.encoding
             )
 
+    def __str__(self) -> str:
+        return (
+            Config.__name__
+            + "({"
+            + ", ".join({f"{k!r}: {str(v)}" for k, v in self.items()})
+            + "})"
+        )
+
     def keys(self) -> "Iterable[DataObject]":
         return self.obj.keys()
 
@@ -227,6 +238,9 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                 )
         self.obj = new_obj
 
+    def __str__(self) -> str:
+        return f"{Config.__name__}([" + ", ".join([str(x) for x in self.obj]) + "])"
+
     def append(self, __object: "ConfigObject") -> None:
         if isinstance(__object, ConfigIOWrapper):
             self.obj.append(__object)
@@ -245,6 +259,26 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
     def to_object(self) -> "ConfigObject":
         return [x.to_object() for x in self.obj]
+
+
+class Config:
+    """
+    Initialize a new config object.
+
+    Parameters
+    ----------
+    obj : ConfigObject
+        Config object.
+
+    Returns
+    -------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+
+    def __new__(cls, obj: "ConfigObject") -> ConfigIOWrapper:
+        return ConfigIOWrapper(obj, "json")
 
 
 class FileFormatError(Exception):

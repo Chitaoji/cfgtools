@@ -15,7 +15,7 @@ from .reading import READING_METHOD_MAPPING, detect_encoding
 if TYPE_CHECKING:
     from ._typing import ConfigObject
 
-__all__ = ["read_config", "new_config", "read", "new"]
+__all__ = ["read_config", "read"]
 
 
 def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
@@ -54,23 +54,4 @@ def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
     raise FileFormatError(f"failed to read config file: '{path}'")
 
 
-def new_config(obj: "ConfigObject") -> ConfigIOWrapper:
-    """
-    Initialize a new config object.
-
-    Parameters
-    ----------
-    obj : ConfigObject
-        Config object.
-
-    Returns
-    -------
-    ConfigIOWrapper
-        A wrapper for reading and writing config files.
-
-    """
-    return ConfigIOWrapper(obj, "json")
-
-
 read = read_config
-new = new_config
