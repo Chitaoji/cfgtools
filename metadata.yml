@@ -7,7 +7,8 @@ AUTHOR: Chitaoji
 AUTHOR_EMAIL: 2360742040@qq.com
 REQUIRES_PYTHON: ">=3.8.13"
 REQUIRES: 
-  - yaml
+  - pyyaml
+  - chadet
 EXTRAS: {}
 SOURCE: src
 SUBMODULES: []
