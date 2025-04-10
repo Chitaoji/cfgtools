@@ -23,7 +23,7 @@ def _to_yaml(
     obj: "Config", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "w", encoding=encoding) as f:
-        yaml.dump(obj, f, sort_keys=False)
+        yaml.safe_dump(obj, f, sort_keys=False)
 
 
 def _to_pickle(
@@ -32,13 +32,14 @@ def _to_pickle(
     with open(path, "wb", encoding=encoding) as f:
         pickle.dump(obj, f)
 
+
 def _to_json(
     obj: "Config", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "w", encoding=encoding) as f:
         json.dump(obj, f)
-        
-        
+
+
 WRITING_METHOD_MAPPING = {
     "yaml": _to_yaml,
     "yml": _to_yaml,

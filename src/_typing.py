@@ -14,6 +14,6 @@ logging.warning(
     "therefore unexpected errors may occur"
 )
 
-Data = int | float | str
+Data = bool | int | float | str | None
 Config = dict[Data, "Config"] | list["Config"] | Data
 ConfigFileFormat = Literal["yaml", "yml", "pickle", "pkl"]
