@@ -14,7 +14,7 @@ from .saving import WRITING_METHOD_MAPPING
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject, DataObject
 
-__all__ = ["Config"]
+__all__ = []
 
 SUFFIX_MAPPING = {
     ".yaml": "yaml",
@@ -96,7 +96,7 @@ class ConfigIOWrapper:
         return f"{self.obj!r}"
 
     def __str__(self) -> str:
-        return f"{Config.__name__}({self.obj!r})"
+        return f"config({self.obj!r})"
 
     def keys(self) -> "Iterable[DataObject]":
         """Provide a view of the config object's keys if it's a dict."""
@@ -206,10 +206,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
 
     def __str__(self) -> str:
         return (
-            Config.__name__
-            + "({"
-            + ", ".join({f"{k!r}: {str(v)}" for k, v in self.items()})
-            + "})"
+            "config({" + ", ".join({f"{k!r}: {str(v)}" for k, v in self.items()}) + "})"
         )
 
     def keys(self) -> Iterable["DataObject"]:
@@ -239,7 +236,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         self.obj = new_obj
 
     def __str__(self) -> str:
-        return f"{Config.__name__}([" + ", ".join([str(x) for x in self.obj]) + "])"
+        return "config([" + ", ".join([str(x) for x in self.obj]) + "])"
 
     def __getitem__(self, __key: int) -> Self:
         return self.obj[__key]
@@ -264,13 +261,6 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
     def to_object(self) -> "ConfigObject":
         return [x.to_object() for x in self.obj]
-
-
-class Config:
-    """Default constructor for `ConfigIOWrapper`."""
-
-    def __new__(cls, obj: "ConfigObject") -> ConfigIOWrapper:
-        return ConfigIOWrapper(obj, "json")
 
 
 class FileFormatError(Exception):
