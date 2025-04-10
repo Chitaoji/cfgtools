@@ -61,13 +61,13 @@ class ConfigIOWrapper:
             return ConfigIOWrapper(
                 self.obj[__key], self.fileformat, encoding=self.encoding
             )
-        raise TypeError(f"{self.__obj_desc()} is not subscriptable")
+        raise TypeError(f"{self._obj_desc()} is not subscriptable")
 
     def __setitem__(self, __key: "Data", __value: "Config"):
         if isinstance(self.obj, (list, dict)):
             self.obj[__key] = __value
         else:
-            raise TypeError(f"{self.__obj_desc()} does not support item assignment")
+            raise TypeError(f"{self._obj_desc()} does not support item assignment")
 
     def __repr__(self) -> str:
         return repr(self.obj)
@@ -132,42 +132,46 @@ class ConfigIOWrapper:
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
+    def type(self) -> str:
+        """Return the type of the config object."""
+        return self.obj.__class__.__name__
+
+    def _obj_desc(self) -> str:
+        return f"the config object (of type {self.type()!r})"
+
+
+class _DictConfigIOWrapper(ConfigIOWrapper):
     def keys(self) -> "Iterable[Data]":
         """Provide a view of the config object's keys if it's a dict."""
         if isinstance(self.obj, dict):
             return self.obj.keys()
-        raise TypeError(f"{self.__obj_desc()} is not a dict")
+        raise TypeError(f"{self._obj_desc()} is not a dict")
 
     def values(self) -> "Iterable[Config]":
         """Provide a view of the config object's values if it's a dict."""
         if isinstance(self.obj, dict):
             return self.obj.values()
-        raise TypeError(f"{self.__obj_desc()} is not a dict")
+        raise TypeError(f"{self._obj_desc()} is not a dict")
 
     def items(self) -> "Iterable[tuple[Data, Config]]":
         """Provide a view of the config object's items if it's a dict."""
         if isinstance(self.obj, dict):
             return self.obj.items()
-        raise TypeError(f"{self.__obj_desc()} is not a dict")
+        raise TypeError(f"{self._obj_desc()} is not a dict")
 
+
+class _ListConfigIOWrapper(ConfigIOWrapper):
     def append(self, __object: "Config") -> None:
         """Append object to the end of the config object if it's a list."""
         if isinstance(self.obj, list):
             return self.obj.append(__object)
-        raise TypeError(f"{self.__obj_desc()} is not a list")
+        raise TypeError(f"{self._obj_desc()} is not a list")
 
     def extend(self, __object: "Iterable[Config]") -> None:
         """Extend the config object if it's a list."""
         if isinstance(self.obj, list):
             return self.obj.extend(__object)
-        raise TypeError(f"{self.__obj_desc()} is not a list")
-
-    def type(self) -> str:
-        """Return the type of the config object."""
-        return self.obj.__class__.__name__
-
-    def __obj_desc(self) -> str:
-        return f"the config object (of type {self.type()!r})"
+        raise TypeError(f"{self._obj_desc()} is not a list")
 
 
 class FileFormatError(Exception):
