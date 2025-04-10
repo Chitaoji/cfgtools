@@ -14,7 +14,7 @@ import yaml
 
 from .iowrapper import ConfigIOWrapper
 
-__all__ = ["read_yaml", "read_pickle"]
+__all__ = ["read_yaml", "read_pickle", "read_json"]
 
 
 def read_yaml(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
@@ -71,15 +71,13 @@ def read_pickle(path: str | Path) -> ConfigIOWrapper:
     return ConfigIOWrapper(cfg, "pickle", path=path)
 
 
-def _try_read_pickle(
-    path: str | Path, encoding: str | None = None
-) -> ConfigIOWrapper | None:
+def _try_read_pickle(path: str | Path, **_) -> ConfigIOWrapper | None:
     try:
         return read_pickle(path)
     except pickle.UnpicklingError:
         return None
-    
-    
+
+
 def read_json(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read a json file.
@@ -108,6 +106,7 @@ def _try_read_json(
     path: str | Path, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
     return read_json(path, encoding=encoding)
+
 
 READING_METHOD_MAPPING = {
     "yaml": _try_read_yaml,
