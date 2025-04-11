@@ -1,4 +1,5 @@
 """Contains examples."""
 
-from .test_data import *
-from .test_data import __all__
+from . import test_case
+
+__all__ = ["test_case"]
