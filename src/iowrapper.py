@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Iterable, Self
 from .saving import WRITING_METHOD_MAPPING
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, ConfigObject, DataObject
+    from ._typing import ConfigFileFormat, ConfigObject, DataObject, ObjectTypeStr
 
 __all__ = []
 
@@ -22,6 +22,7 @@ SUFFIX_MAPPING = {
     ".pickle": "pickle",
     ".pkl": "pickle",
     ".json": "json",
+    ".ini": "ini",
 }
 
 
@@ -162,19 +163,23 @@ class ConfigIOWrapper:
                 fileformat = self.fileformat
         encoding = self.encoding if encoding is None else encoding
         if fileformat in WRITING_METHOD_MAPPING:
-            WRITING_METHOD_MAPPING[fileformat](
-                self.to_object(), path, encoding=encoding
-            )
+            WRITING_METHOD_MAPPING[fileformat](self, path, encoding=encoding)
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
-    def type(self) -> str:
+    def type(self) -> "ObjectTypeStr":
         """Return the type of the config object."""
         return self.obj.__class__.__name__
 
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""
         return self.obj
+
+    def to_sections(self) -> dict:
+        """Reformat the config object with `.ini` format, and returns a dict."""
+        if self.type() == "dict":
+            return self.to_object()
+        return {str(self.to_object()): {}}
 
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"

@@ -54,14 +54,14 @@ def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
     raise FileFormatError(f"failed to read config file: '{path}'")
 
 
-def config(obj: "ConfigObject") -> ConfigIOWrapper:
+def config(obj: "ConfigObject" = None) -> ConfigIOWrapper:
     """
     Initialize a new config object.
 
     Parameters
     ----------
-    obj : ConfigObject
-        Config object.
+    obj : ConfigObject, optional
+        Config object, by default None.
 
     Returns
     -------

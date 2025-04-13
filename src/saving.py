@@ -8,36 +8,46 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import pickle
+from configparser import ConfigParser
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
 
 if TYPE_CHECKING:
-    from ._typing import ConfigObject
+    from .iowrapper import ConfigIOWrapper
 
 __all__ = []
 
 
 def _to_yaml(
-    obj: "ConfigObject", path: str | Path | None, encoding: str | None = None
+    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "w", encoding=encoding) as f:
-        yaml.safe_dump(obj, f, sort_keys=False)
+        yaml.safe_dump(obj.to_object(), f, sort_keys=False)
 
 
 def _to_pickle(
-    obj: "ConfigObject", path: str | Path | None, encoding: str | None = None
+    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "wb", encoding=encoding) as f:
-        pickle.dump(obj, f)
+        pickle.dump(obj.to_object(), f)
 
 
 def _to_json(
-    obj: "ConfigObject", path: str | Path | None, encoding: str | None = None
+    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
 ) -> None:
     with open(path, "w", encoding=encoding) as f:
-        json.dump(obj, f)
+        json.dump(obj.to_object(), f)
+
+
+def _to_ini(
+    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
+) -> None:
+    parser = ConfigParser()
+    parser.read_dict(obj.to_sections())
+    with open(path, "w", encoding=encoding) as f:
+        parser.write(f)
 
 
 WRITING_METHOD_MAPPING = {
@@ -46,4 +56,5 @@ WRITING_METHOD_MAPPING = {
     "pickle": _to_pickle,
     "pkl": _to_pickle,
     "json": _to_json,
+    "ini": _to_ini,
 }

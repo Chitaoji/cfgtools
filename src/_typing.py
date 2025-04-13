@@ -24,3 +24,4 @@ ConfigObject = (
     | ConfigIOWrapper
 )
 ConfigFileFormat = Literal["json", "yaml", "yml", "pickle", "pkl"]
+ObjectTypeStr = Literal["dict", "list", "bool", "int", "float", "str", "NoneType"]
