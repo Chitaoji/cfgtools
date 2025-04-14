@@ -8,6 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import pickle
+from configparser import ConfigParser, MissingSectionHeaderError
 from pathlib import Path
 
 import chardet
@@ -15,7 +16,7 @@ import yaml
 
 from .iowrapper import ConfigIOWrapper
 
-__all__ = ["detect_encoding", "read_yaml", "read_pickle", "read_json"]
+__all__ = ["detect_encoding", "read_yaml", "read_pickle", "read_json", "read_ini"]
 
 
 def detect_encoding(path: str | Path) -> str:
@@ -131,8 +132,50 @@ def _try_read_json(
         return None
 
 
+def read_ini(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+    """
+    Read an ini file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the ini file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    parser = ConfigParser()
+    parser.read(path, encoding=encoding)
+    return ConfigIOWrapper(
+        {
+            s: {o: parser.get(s, o) for o in parser.options(s)}
+            for s in parser.sections()
+        },
+        "ini",
+        path=path,
+        encoding=encoding,
+    )
+
+
+def _try_read_ini(
+    path: str | Path, encoding: str | None = None
+) -> ConfigIOWrapper | None:
+    try:
+        return read_ini(path, encoding=encoding)
+    except MissingSectionHeaderError:
+        return None
+
+
 READING_METHOD_MAPPING = {
     "json": _try_read_json,
     "yaml": _try_read_yaml,
     "pickle": _try_read_pickle,
+    "ini": _try_read_ini,
 }

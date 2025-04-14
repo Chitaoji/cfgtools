@@ -51,7 +51,7 @@ def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
         for m in READING_METHOD_MAPPING.values():
             if (cfg := m(path, encoding=encoding)) is not None:
                 return cfg
-    raise FileFormatError(f"failed to read config file: '{path}'")
+    raise FileFormatError(f"failed to read the config file: '{path}'")
 
 
 def config(obj: "ConfigObject" = None) -> ConfigIOWrapper:

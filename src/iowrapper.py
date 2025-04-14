@@ -177,9 +177,10 @@ class ConfigIOWrapper:
 
     def to_sections(self) -> dict:
         """Reformat the config object with `.ini` format, and returns a dict."""
-        if self.type() == "dict":
-            return self.to_object()
-        return {str(self.to_object()): {}}
+        obj = self.to_object()
+        if isinstance(obj, dict) and all(isinstance(v, dict) for v in obj.values()):
+            return obj
+        return {str(obj): {}}
 
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"
