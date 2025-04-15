@@ -9,6 +9,7 @@ REQUIRES_PYTHON: ">=3.12.7"
 REQUIRES: 
   - pyyaml
   - chadet
+  - lazyr
 EXTRAS: {}
 SOURCE: src
 SUBMODULES: []

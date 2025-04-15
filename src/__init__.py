@@ -14,6 +14,13 @@ This project falls under the BSD 3-Clause License.
 
 """
 
+import lazyr
+
+VERBOSE = 0
+
+lazyr.register("yaml", verbose=VERBOSE)
+
+# pylint: disable=wrong-import-position
 from . import core, iowrapper, reading
 from .__version__ import __version__
 from .core import *

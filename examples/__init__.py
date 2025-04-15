@@ -2,9 +2,9 @@
 
 import lazyr
 
-VERBOSE = 3
+VERBOSE = 0
 
-lazyr.register("faker", ignore=["Faker"], verbose=VERBOSE)
+lazyr.register("faker.Faker", verbose=VERBOSE)
 
 # pylint: disable=wrong-import-position
 from . import test_case
