@@ -15,7 +15,7 @@ from .saving import WRITING_METHOD_MAPPING
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject, DataObject, ObjectTypeStr
 
-__all__ = []
+__all__ = ["FileFormatError"]
 
 SUFFIX_MAPPING = {
     ".yaml": "yaml",
@@ -297,4 +297,4 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
 
 class FileFormatError(Exception):
-    """Raised when file format is not supported."""
+    """Raised when the file format is not supported."""
