@@ -160,10 +160,10 @@ def read_ini(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
         s: {o: _obj_restore(parser.get(s, o)) for o in parser.options(s)}
         for s in parser.sections()
     }
-    if len(obj) == 1:
-        k, v = list(obj.items())[0]
-        if v == {}:
-            obj = _obj_restore(k)
+    if len(obj) == 1 and "null" in obj:
+        _temp = obj["null"]
+        if len(_temp) == 1 and "null" in _temp:
+            obj = _temp["null"]
     return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
 
 

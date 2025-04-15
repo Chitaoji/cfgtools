@@ -195,7 +195,7 @@ class ConfigIOWrapper:
         obj = self.to_object()
         if isinstance(obj, dict) and all(isinstance(v, dict) for v in obj.values()):
             return {k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()}
-        return {json.dumps(obj): {}}
+        return {"null": {"null": json.dumps(obj)}}
 
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""
