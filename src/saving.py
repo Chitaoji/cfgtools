@@ -43,7 +43,7 @@ def _to_ini(
     obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
 ) -> None:
     parser = ConfigParser()
-    parser.read_dict(obj.to_sections())
+    parser.read_dict(obj.to_ini_dict())
     with open(path, "w", encoding=encoding) as f:
         parser.write(f)
 

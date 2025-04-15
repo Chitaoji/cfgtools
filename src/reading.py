@@ -174,8 +174,8 @@ def _try_read_ini(
 
 
 READING_METHOD_MAPPING = {
-    "json": _try_read_json,
-    "yaml": _try_read_yaml,
     "pickle": _try_read_pickle,
+    "json": _try_read_json,
     "ini": _try_read_ini,
+    "yaml": _try_read_yaml,
 }

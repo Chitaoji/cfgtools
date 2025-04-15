@@ -189,16 +189,16 @@ class ConfigIOWrapper:
         """Save the config in an ini file. See `self.save()` for more details."""
         self.save(path, "ini", encoding=encoding)
 
-    def to_object(self) -> "ConfigObject":
-        """Returns the config object without any wrapper."""
-        return self.obj
-
-    def to_sections(self) -> dict:
+    def to_ini_dict(self) -> dict:
         """Reformat the config object with `.ini` format, and returns a dict."""
         obj = self.to_object()
         if isinstance(obj, dict) and all(isinstance(v, dict) for v in obj.values()):
-            return obj
+            return {k: {x: str(y) for x, y in v.items()} for k, v in obj.items()}
         return {str(obj): {}}
+
+    def to_object(self) -> "ConfigObject":
+        """Returns the config object without any wrapper."""
+        return self.obj
 
     def type(self) -> "ObjectTypeStr":
         """Return the type of the config object."""
