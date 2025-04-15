@@ -10,7 +10,35 @@ if TYPE_CHECKING:
     from ..src._typing import ConfigIOWrapper
 
 
-__all__ = ["customer_data"]
+__all__ = ["ip_location", "customer_data"]
+
+
+def ip_location(
+    number_of_addresses: int = 20, seed: int | None = None
+) -> "ConfigIOWrapper":
+    """
+    Returns a fake mapping of IP addresses to the real-world geographic
+    locations of the Internet-connected devices.
+
+    Parameters
+    ----------
+    number_of_addresses : int, optional
+        Number of ip addresses, by default 20.
+    seed : int | None, optional
+        Seed value, by default None.
+
+    Returns
+    -------
+    ConfigIOWrapper
+        Config object.
+
+    """
+    faker = Faker()
+    faker.seed_instance(seed)
+    mapping = {}
+    for _ in range(number_of_addresses):
+        mapping[faker.ipv4()] = [faker.city()] + faker.address().splitlines()
+    return config(mapping)
 
 
 def customer_data(
@@ -35,10 +63,10 @@ def customer_data(
     """
     faker = Faker()
     faker.seed_instance(seed)
-    book = {}
+    data = {}
     for _ in range(number_of_customers):
         name = faker.name()
-        book[name] = {
+        data[name] = {
             "name": name,
             "email": faker.email(),
             "phone_number": faker.phone_number(),
@@ -55,4 +83,4 @@ def customer_data(
                 for __ in range(faker.pyint(min_value=1, max_value=10))
             ],
         }
-    return config(book)
+    return config(data)
