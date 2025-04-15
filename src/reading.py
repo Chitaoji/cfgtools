@@ -11,7 +11,6 @@ import pickle
 from configparser import ConfigParser, MissingSectionHeaderError
 from pathlib import Path
 
-import chardet
 import yaml
 
 from .iowrapper import ConfigIOWrapper
@@ -36,7 +35,7 @@ def detect_encoding(path: str | Path) -> str:
     """
     with open(path, "rb") as f:
         test_line = f.readline()
-    return chardet.detect(test_line)["encoding"]
+    return json.detect_encoding(test_line)
 
 
 def read_yaml(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
