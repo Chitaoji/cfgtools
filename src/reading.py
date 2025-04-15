@@ -161,9 +161,9 @@ def read_ini(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
         for s in parser.sections()
     }
     if len(obj) == 1 and "null" in obj:
-        _temp = obj["null"]
-        if len(_temp) == 1 and "null" in _temp:
-            obj = _temp["null"]
+        obj = obj["null"]
+        if len(obj) == 1 and "null" in obj:
+            obj = obj["null"]
     return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
 
 
