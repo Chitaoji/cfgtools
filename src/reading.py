@@ -10,10 +10,14 @@ import json
 import pickle
 from configparser import ConfigParser, MissingSectionHeaderError
 from pathlib import Path
+from typing import TYPE_CHECKING, Callable
 
 import yaml
 
 from .iowrapper import ConfigIOWrapper
+
+if TYPE_CHECKING:
+    from ._typing import ConfigObject
 
 __all__ = ["detect_encoding", "read_yaml", "read_pickle", "read_json", "read_ini"]
 
@@ -152,15 +156,22 @@ def read_ini(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
     encoding = detect_encoding(path) if encoding is None else encoding
     parser = ConfigParser()
     parser.read(path, encoding=encoding)
-    return ConfigIOWrapper(
-        {
-            s: {o: parser.get(s, o) for o in parser.options(s)}
-            for s in parser.sections()
-        },
-        "ini",
-        path=path,
-        encoding=encoding,
-    )
+    obj = {
+        s: {o: _obj_restore(parser.get(s, o)) for o in parser.options(s)}
+        for s in parser.sections()
+    }
+    if len(obj) == 1:
+        k, v = list(obj.items())[0]
+        if v == {}:
+            obj = _obj_restore(k)
+    return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
+
+
+def _obj_restore(string: str) -> "ConfigObject":
+    try:
+        return json.loads(string)
+    except json.JSONDecodeError:
+        return string
 
 
 def _try_read_ini(
@@ -172,9 +183,9 @@ def _try_read_ini(
         return None
 
 
-READING_METHOD_MAPPING = {
+READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "pickle": _try_read_pickle,
-    "json": _try_read_json,
     "ini": _try_read_ini,
+    "json": _try_read_json,
     "yaml": _try_read_yaml,
 }

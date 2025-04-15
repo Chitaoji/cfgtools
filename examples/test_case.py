@@ -49,7 +49,8 @@ def customer_data(
                     "product_id": faker.md5(),
                     "quantity": faker.pyint(1, 1000),
                     "unit_price": faker.pyfloat(3, 2, True),
-                    "date": str(faker.date_this_decade()),
+                    "date": str(faker.date_this_year()),
+                    "completed": faker.pybool(),
                 }
                 for __ in range(faker.pyint(min_value=1, max_value=10))
             ],

@@ -194,8 +194,8 @@ class ConfigIOWrapper:
         """Reformat the config object with `.ini` format, and returns a dict."""
         obj = self.to_object()
         if isinstance(obj, dict) and all(isinstance(v, dict) for v in obj.values()):
-            return {k: {x: _json_str(y) for x, y in v.items()} for k, v in obj.items()}
-        return {_json_str(obj): {}}
+            return {k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()}
+        return {json.dumps(obj): {}}
 
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""
@@ -207,10 +207,6 @@ class ConfigIOWrapper:
 
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"
-
-
-def _json_str(obj: "ConfigObject") -> str:
-    return json.dumps(obj) if isinstance(obj, (dict, list)) else str(obj)
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):

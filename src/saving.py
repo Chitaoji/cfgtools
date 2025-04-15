@@ -10,7 +10,7 @@ import json
 import pickle
 from configparser import ConfigParser
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import yaml
 
@@ -48,7 +48,7 @@ def _to_ini(
         parser.write(f)
 
 
-WRITING_METHOD_MAPPING = {
+WRITING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
     "yaml": _to_yaml,
     "yml": _to_yaml,
     "pickle": _to_pickle,
