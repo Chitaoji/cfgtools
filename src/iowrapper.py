@@ -95,10 +95,28 @@ class ConfigIOWrapper:
         self.save()
 
     def __repr__(self) -> str:
-        return f"{self.obj!r}"
+        return self.repr()
 
     def __str__(self) -> str:
         return f"config({self.obj!r})"
+
+    def repr(self, level: int = 0, /) -> str:
+        """
+        Represent self.
+
+        Parameters
+        ----------
+        level : int, optional
+            Depth level, by default 0.
+
+        Returns
+        -------
+        str
+            A representation of self.
+
+        """
+        _ = level
+        return f"{self.obj!r}"
 
     def keys(self) -> "Iterable[DataObject]":
         """Provide a view of the config object's keys if it's a dict."""
@@ -242,6 +260,18 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
             "config({" + ", ".join({f"{k!r}: {str(v)}" for k, v in self.items()}) + "})"
         )
 
+    def repr(self, level: int = 0, /) -> str:
+        string = (
+            "{"
+            + (f"\n {_sep(level)}" if level > 0 else "")
+            + f",\n {_sep(level)}".join(
+                f"{k!r}: {v.repr(level+1)}" for k, v in self.obj.items()
+            )
+            + (f"\n {_sep(level-1)}" if level > 0 else "")
+            + "}"
+        )
+        return string
+
     def keys(self) -> Iterable["DataObject"]:
         return self.obj.keys()
 
@@ -274,6 +304,16 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
     def __getitem__(self, __key: int) -> Self:
         return self.obj[__key]
 
+    def repr(self, level: int = 0, /) -> str:
+        string = (
+            "["
+            + (f"\n {_sep(level)}" if level > 0 else "")
+            + f",\n {_sep(level)}".join(x.repr(level + 1) for x in self)
+            + (f"\n {_sep(level-1)}" if level > 0 else "")
+            + "]"
+        )
+        return string
+
     def append(self, __object: "ConfigObject") -> None:
         if isinstance(__object, ConfigIOWrapper):
             self.obj.append(__object)
@@ -294,6 +334,10 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
     def to_object(self) -> "ConfigObject":
         return [x.to_object() for x in self.obj]
+
+
+def _sep(level: int) -> str:
+    return "    " * level
 
 
 class FileFormatError(Exception):
