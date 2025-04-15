@@ -167,9 +167,27 @@ class ConfigIOWrapper:
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
-    def type(self) -> "ObjectTypeStr":
-        """Return the type of the config object."""
-        return self.obj.__class__.__name__
+    def to_json(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        self.save(path, "json", encoding=encoding)
+
+    def to_yaml(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a yaml file. See `self.save()` for more details."""
+        self.save(path, "yaml", encoding=encoding)
+
+    def to_pickle(self, path: str | Path | None = None, /) -> None:
+        """Save the config in a pickle file. See `self.save()` for more details."""
+        self.save(path, "pickle")
+
+    def to_ini(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in an ini file. See `self.save()` for more details."""
+        self.save(path, "ini", encoding=encoding)
 
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""
@@ -181,6 +199,10 @@ class ConfigIOWrapper:
         if isinstance(obj, dict) and all(isinstance(v, dict) for v in obj.values()):
             return obj
         return {str(obj): {}}
+
+    def type(self) -> "ObjectTypeStr":
+        """Return the type of the config object."""
+        return self.obj.__class__.__name__
 
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"

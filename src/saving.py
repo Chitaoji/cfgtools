@@ -27,10 +27,8 @@ def _to_yaml(
         yaml.safe_dump(obj.to_object(), f, sort_keys=False)
 
 
-def _to_pickle(
-    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
-) -> None:
-    with open(path, "wb", encoding=encoding) as f:
+def _to_pickle(obj: "ConfigIOWrapper", path: str | Path | None, **_) -> None:
+    with open(path, "wb") as f:
         pickle.dump(obj.to_object(), f)
 
 
