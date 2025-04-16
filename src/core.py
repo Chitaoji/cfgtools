@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 __all__ = ["read_config", "config"]
 
 
-def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_config(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read a config file. The format of the file is automatically
     detected.
@@ -54,7 +54,7 @@ def read_config(path: str | Path, encoding: str | None = None) -> ConfigIOWrappe
     raise FileFormatError(f"failed to read the config file: '{path}'")
 
 
-def config(obj: "ConfigObject" = None) -> ConfigIOWrapper:
+def config(obj: "ConfigObject" = None, /) -> ConfigIOWrapper:
     """
     Initialize a new config object.
 

@@ -90,8 +90,8 @@ class ConfigIOWrapper:
     def __enter__(self) -> Self:
         if self.path is None:
             raise TypeError(
-                "failed to access method '.__enter__()' because no file path "
-                "is specified"
+                "failed to access method '.__enter__()' because the config "
+                "object was not read from a file"
             )
         return self
 
