@@ -73,7 +73,11 @@ class ConfigIOWrapper:
     ) -> None:
         self.obj = obj
         self.fileformat = fileformat
-        self.path = path
+        if path is None:
+            self.path = None
+        else:
+            path = Path(path)
+            self.path = path.absolute().relative_to(path.cwd()).as_posix()
         self.encoding = encoding
 
     def __getitem__(self, __key: "DataObject") -> Self:
@@ -95,7 +99,11 @@ class ConfigIOWrapper:
         self.save()
 
     def __repr__(self) -> str:
-        return self.repr()
+        header = (
+            f"config | format: {self.fileformat!r} | path: {self.path!r} "
+            f"| encoding: {self.encoding!r}"
+        )
+        return f"{header}\n{'-'*len(header)}\n{self.repr()}"
 
     def __str__(self) -> str:
         return f"config({self.obj!r})"
@@ -263,11 +271,11 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
     def repr(self, level: int = 0, /) -> str:
         string = (
             "{"
-            + (f"\n {_sep(level)}" if level > 0 else "")
-            + f",\n {_sep(level)}".join(
+            + f"\n{_sep(level+1)}"
+            + f",\n{_sep(level+1)}".join(
                 f"{k!r}: {v.repr(level+1)}" for k, v in self.obj.items()
             )
-            + (f"\n {_sep(level-1)}" if level > 0 else "")
+            + f"\n{_sep(level)}"
             + "}"
         )
         return string
@@ -307,9 +315,9 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
     def repr(self, level: int = 0, /) -> str:
         string = (
             "["
-            + (f"\n {_sep(level)}" if level > 0 else "")
-            + f",\n {_sep(level)}".join(x.repr(level + 1) for x in self)
-            + (f"\n {_sep(level-1)}" if level > 0 else "")
+            + f"\n{_sep(level+1)}"
+            + f",\n{_sep(level+1)}".join(x.repr(level + 1) for x in self)
+            + f"\n{_sep(level)}"
             + "]"
         )
         return string
