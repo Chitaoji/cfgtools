@@ -25,6 +25,7 @@ SUFFIX_MAPPING = {
     ".json": "json",
     ".ini": "ini",
 }
+MAX_LINE_WIDTH = 88
 
 
 class ConfigIOWrapper:
@@ -103,6 +104,8 @@ class ConfigIOWrapper:
             f"config | format: {self.fileformat!r} | path: {self.path!r} "
             f"| encoding: {self.encoding!r}"
         )
+        if len(flat := str(self.to_object())) <= MAX_LINE_WIDTH:
+            return f"{header}\n{'-'*len(header)}\n{flat}"
         return f"{header}\n{'-'*len(header)}\n{self.repr()}"
 
     def __str__(self) -> str:
@@ -269,15 +272,16 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         )
 
     def repr(self, level: int = 0, /) -> str:
-        string = (
-            "{"
-            + f"\n{_sep(level+1)}"
-            + f",\n{_sep(level+1)}".join(
-                f"{k!r}: {v.repr(level+1)}" for k, v in self.obj.items()
-            )
-            + f"\n{_sep(level)}"
-            + "}"
-        )
+        string = "{\n"
+        lines: list[str] = []
+        for k, v in self.obj.items():
+            _line = f"{_sep(level+1)}" f"{k!r}: "
+            _flat = str(v.to_object())
+            if len(_line) + len(_flat) < MAX_LINE_WIDTH:
+                lines.append(_line + _flat + ",")
+            else:
+                lines.append(_line + v.repr(level + 1) + ",")
+        string += "\n".join(lines) + f"\n{_sep(level)}" "}"
         return string
 
     def keys(self) -> Iterable["DataObject"]:
@@ -313,13 +317,16 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         return self.obj[__key]
 
     def repr(self, level: int = 0, /) -> str:
-        string = (
-            "["
-            + f"\n{_sep(level+1)}"
-            + f",\n{_sep(level+1)}".join(x.repr(level + 1) for x in self)
-            + f"\n{_sep(level)}"
-            + "]"
-        )
+        string = "[\n"
+        lines: list[str] = []
+        for x in self.obj:
+            _line = _sep(level + 1)
+            _flat = str(x.to_object())
+            if len(_line) + len(_flat) < MAX_LINE_WIDTH:
+                lines.append(_line + _flat + ",")
+            else:
+                lines.append(_line + x.repr(level + 1) + ",")
+        string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
 
     def append(self, __object: "ConfigObject") -> None:
