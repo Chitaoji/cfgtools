@@ -90,9 +90,8 @@ class ConfigIOWrapper:
     def __enter__(self) -> Self:
         if self.path is None:
             raise TypeError(
-                "failed to access the method '.__enter__()' because this wrapper "
-                "is a children node of the original wrapper - try on the original "
-                "wrapper instead"
+                "failed to access method '.__enter__()' because no file path "
+                "is specified"
             )
         return self
 
