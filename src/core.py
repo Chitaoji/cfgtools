@@ -29,7 +29,8 @@ def read_config(path: str | Path, /, encoding: str | None = None) -> ConfigIOWra
         File path.
     encoding : str | None, optional
         The name of the encoding used to decode or encode the file
-        (if needed), by default None.
+        (if needed), by default None. If not specified, the encoding
+        will be automatically detected.
 
     Returns
     --------

@@ -100,12 +100,13 @@ class ConfigIOWrapper:
 
     def __repr__(self) -> str:
         header = (
-            f"config | format: {self.fileformat!r} | path: {self.path!r} "
+            f"format: {self.fileformat!r} | path: {self.path!r} "
             f"| encoding: {self.encoding!r}"
         )
+        divide_line = "-" * len(header)
         if len(flat := str(self.to_object())) <= MAX_LINE_WIDTH:
-            return f"{header}\n{'-'*len(header)}\n{flat}"
-        return f"{header}\n{'-'*len(header)}\n{self.repr()}"
+            return f"{flat}\n{divide_line}\n{header}\n{divide_line}"
+        return f"{self.repr()}\n{divide_line}\n{header}\n{divide_line}"
 
     def __str__(self) -> str:
         return f"config({self.obj!r})"
