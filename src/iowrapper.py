@@ -110,6 +110,9 @@ class ConfigIOWrapper:
             reprs = self.repr()
         return f"{reprs}\n{divide_line}\n{header}\n{divide_line}"
 
+    def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
+        return {"text/html": self.to_html()}
+
     def __str__(self) -> str:
         return f"config({self.obj!r})"
 
@@ -236,12 +239,63 @@ class ConfigIOWrapper:
         """Returns the config object without any wrapper."""
         return self.obj
 
+    def to_html(self) -> str:
+        """Return an HTML text for representing self."""
+        return repr(self)
+
     def type(self) -> "ObjectTypeStr":
         """Return the type of the config object."""
         return self.obj.__class__.__name__
 
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"
+
+
+def make_html_tree(obj: "ConfigObject") -> str:
+    """
+    Make an HTML tree.
+
+    Parameters
+    ----------
+    tree : TextTree
+        A python module / class / function / method.
+
+    Returns
+    -------
+    str
+        Html string.
+
+    """
+    tstyle = "<ul>"
+    return f"{tstyle}\n{__get_li(obj)}\n</ul>"
+
+
+def __get_li(tree: "TextTree", main: bool = True) -> str:
+    triangle = ""
+    if tree.is_dir() and tree.children:
+        tchidren = "\n".join(__get_li(x) for x in tree.children)
+        return (
+            f'<li class="m"><details><summary>{triangle}{make_plain_text(tree.name)}'
+            f'</summary>\n<ul class="m">\n{tchidren}\n</ul>\n</details></li>'
+        )
+
+    li_class = "m" if main else "s"
+    ul_class = "m" if display_params.tree_style == "vertical" else "s"
+    triangle = triangle if main else ""
+    if tree.children:
+        tchidren = "\n".join(
+            __get_li(x, main=ul_class == "m")
+            for x in tree.children
+            if x.name != NULL and __is_public(x.name)
+        )
+        if tchidren:
+            name = make_plain_text(tree.name) + (".py" if tree.is_file() else "")
+            return (
+                f'<li class="{li_class}"><details><summary>{triangle}{name}</summary>'
+                f'\n<ul class="{ul_class}">\n{tchidren}\n</ul>\n</details></li>'
+            )
+    name = make_plain_text(tree.name) + (".py" if tree.is_file() else "")
+    return f'<li class="{li_class}"><span>{name}</span></li>'
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):
