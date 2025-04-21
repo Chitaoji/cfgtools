@@ -105,8 +105,10 @@ class ConfigIOWrapper:
         )
         divide_line = "-" * len(header)
         if len(flat := str(self.to_object())) <= MAX_LINE_WIDTH:
-            return f"{flat}\n{divide_line}\n{header}\n{divide_line}"
-        return f"{self.repr()}\n{divide_line}\n{header}\n{divide_line}"
+            reprs = flat
+        else:
+            reprs = self.repr()
+        return f"{reprs}\n{divide_line}\n{header}\n{divide_line}"
 
     def __str__(self) -> str:
         return f"config({self.obj!r})"
@@ -272,15 +274,25 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         )
 
     def repr(self, level: int = 0, /) -> str:
+        seps = _sep(level + 1)
         string = "{\n"
         lines: list[str] = []
         for k, v in self.obj.items():
-            _line = f"{_sep(level+1)}" f"{k!r}: "
-            _flat = str(v.to_object())
-            if len(_line) + len(_flat) < MAX_LINE_WIDTH:
-                lines.append(_line + _flat + ",")
+            _head = lines[-1] if lines else ""
+            _key = f"{k!r}: "
+            _flat = repr(v.to_object())
+            if lines and (len(_head) + len(_key) + len(_flat) + 2 <= MAX_LINE_WIDTH):
+                lines[-1] += " " + _key + _flat + ","
+            elif len(seps) + len(_key) + len(_flat) < MAX_LINE_WIDTH:
+                lines.append(seps + _key + _flat + ",")
             else:
-                lines.append(_line + v.repr(level + 1) + ",")
+                _child = v.repr(level + 1)
+                if lines and (
+                    len(_head) + len(_key) + len(_child) + 2 <= MAX_LINE_WIDTH
+                ):
+                    lines[-1] += " " + _key + _child + ","
+                else:
+                    lines.append(seps + _key + _child + ",")
         string += "\n".join(lines) + f"\n{_sep(level)}" "}"
         return string
 
@@ -317,15 +329,22 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         return self.obj[__key]
 
     def repr(self, level: int = 0, /) -> str:
+        seps = _sep(level + 1)
         string = "[\n"
         lines: list[str] = []
         for x in self.obj:
-            _line = _sep(level + 1)
-            _flat = str(x.to_object())
-            if len(_line) + len(_flat) < MAX_LINE_WIDTH:
-                lines.append(_line + _flat + ",")
+            _head = lines[-1] if lines else ""
+            _flat = repr(x.to_object())
+            if lines and (len(_head) + len(_flat) + 2 <= MAX_LINE_WIDTH):
+                lines[-1] += " " + _flat + ","
+            elif len(_head) + len(_flat) < MAX_LINE_WIDTH:
+                lines.append(seps + _flat + ",")
             else:
-                lines.append(_line + x.repr(level + 1) + ",")
+                _child = x.repr(level + 1)
+                if lines and (len(_head) + len(_child) + 2 <= MAX_LINE_WIDTH):
+                    lines[-1] += " " + _child + ","
+                else:
+                    lines.append(seps + _child + ",")
         string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
 
