@@ -30,7 +30,7 @@ If not specifeid, the format of the file is automatically decided according to t
 format: 'yaml' | path: 'test.yaml' | encoding: 'utf-8'
 ------------------------------------------------------
 ```
-The `encoding` of the file is automatically detected if not specified.
+The encoding and format of the file is automatically detected if not specified.
 
 ## See Also
 ### Github repository
