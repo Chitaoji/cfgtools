@@ -19,7 +19,15 @@ from .iowrapper import ConfigIOWrapper
 if TYPE_CHECKING:
     from ._typing import ConfigObject
 
-__all__ = ["detect_encoding", "read_yaml", "read_pickle", "read_json", "read_ini"]
+__all__ = [
+    "detect_encoding",
+    "read_yaml",
+    "read_pickle",
+    "read_json",
+    "read_ini",
+    "read_text",
+    "read_bytes",
+]
 
 
 def detect_encoding(path: str | Path) -> str:
@@ -183,9 +191,66 @@ def _try_read_ini(
         return None
 
 
+def read_text(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+    """
+    Read a text file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the text file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    cfg = Path(path).read_text(encoding=encoding)
+    return ConfigIOWrapper(cfg, "text", path=path, encoding=encoding)
+
+
+def _try_read_text(
+    path: str | Path, encoding: str | None = None
+) -> ConfigIOWrapper | None:
+    try:
+        return read_text(path, encoding=encoding)
+    except UnicodeDecodeError:
+        return None
+
+
+def read_bytes(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+    """
+    Read a bytes file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the bytes file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    cfg = Path(path).read_bytes()
+    return ConfigIOWrapper(cfg, "bytes", path=path, encoding=encoding)
+
+
 READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "pickle": _try_read_pickle,
     "ini": _try_read_ini,
     "json": _try_read_json,
     "yaml": _try_read_yaml,
+    "text": _try_read_text,
+    "bytes": read_bytes,
 }
