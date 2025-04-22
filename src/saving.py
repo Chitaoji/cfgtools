@@ -48,6 +48,16 @@ def _to_ini(
         parser.write(f)
 
 
+def _to_text(
+    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
+) -> None:
+    Path(path).write_text(repr(obj.to_object()), encoding=encoding)
+
+
+def _to_bytes(obj: "ConfigIOWrapper", path: str | Path | None, **_) -> None:
+    Path(path).write_bytes(repr(obj.to_object()))
+
+
 WRITING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
     "yaml": _to_yaml,
     "yml": _to_yaml,
@@ -55,4 +65,7 @@ WRITING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
     "pkl": _to_pickle,
     "json": _to_json,
     "ini": _to_ini,
+    "text": _to_text,
+    "txt": _to_text,
+    "bytes": _to_bytes,
 }

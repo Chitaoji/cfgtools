@@ -24,6 +24,7 @@ SUFFIX_MAPPING = {
     ".pkl": "pickle",
     ".json": "json",
     ".ini": "ini",
+    ".txt": "text",
 }
 MAX_LINE_WIDTH = 88
 
@@ -235,6 +236,16 @@ class ConfigIOWrapper:
             return {"null": {k: json.dumps(v) for k, v in obj.items()}}
         return {"null": {"null": json.dumps(obj)}}
 
+    def to_text(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a text file. See `self.save()` for more details."""
+        self.save(path, "text", encoding=encoding)
+
+    def to_bytes(self, path: str | Path | None = None, /) -> None:
+        """Save the config in a bytes file. See `self.save()` for more details."""
+        self.save(path, "bytes")
+
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""
         return self.obj
@@ -267,7 +278,7 @@ def make_html_tree(obj: "ConfigObject") -> str:
 
     """
     tstyle = "<ul>"
-    return f"{tstyle}\n{__get_li(obj)}\n</ul>"
+    # return f"{tstyle}\n{__get_li(obj)}\n</ul>"
 
 
 # def __get_li(tree: "TextTree", main: bool = True) -> str:
