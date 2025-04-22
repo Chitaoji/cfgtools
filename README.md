@@ -19,7 +19,7 @@ lazyr
 >>> from cfgtools import config
 >>> config({"a": {"b": "c"}}).save("test.yaml")
 ```
-If not specifeid, the format of the file is automatically decided according to the file suffix. Valid formats include `ini`, `json`, `yaml`, `pickle`, etc.
+If not specifeid, the format of the file is automatically detected according to the file suffix. Valid formats include `ini`, `json`, `yaml`, `pickle`, etc.
 
 ### Read from a config file
 ```py

@@ -9,7 +9,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .iowrapper import FORMAT_MAPPING, SUFFIX_MAPPING, ConfigIOWrapper, FileFormatError
+from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
 from .reading import READING_METHOD_MAPPING, TRY_READING_METHOD_MAPPING, detect_encoding
 
 if TYPE_CHECKING:
@@ -48,20 +48,11 @@ def read_config(
     """
     encoding = detect_encoding(path) if encoding is None else encoding
     if fileformat is not None:
-        if not fileformat in FORMAT_MAPPING:
+        if fileformat not in FORMAT_MAPPING:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
         return READING_METHOD_MAPPING[FORMAT_MAPPING[fileformat]](
             path, encoding=encoding
         )
-    elif (suffix := Path(path).suffix) in SUFFIX_MAPPING:
-        default_method = SUFFIX_MAPPING[suffix]
-        wrapper = TRY_READING_METHOD_MAPPING[default_method](path, encoding=encoding)
-        if wrapper is not None:
-            return wrapper
-        for k, m in TRY_READING_METHOD_MAPPING.items():
-            if k != default_method:
-                if (wrapper := m(path, encoding=encoding)) is not None:
-                    return wrapper
     else:
         for m in TRY_READING_METHOD_MAPPING.values():
             if (wrapper := m(path, encoding=encoding)) is not None:

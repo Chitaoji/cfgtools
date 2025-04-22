@@ -294,6 +294,8 @@ def _obj_restore(string: str) -> "ConfigObject":
         return json.loads(string)
     except json.JSONDecodeError:
         return string
+    except UnicodeDecodeError:
+        return string
 
 
 TRY_READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
