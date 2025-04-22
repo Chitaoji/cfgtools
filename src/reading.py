@@ -25,7 +25,9 @@ __all__ = [
     "read_pickle",
     "read_json",
     "read_ini",
+    "read_text",
     "read_config_from_text",
+    "read_bytes",
     "read_config_from_bytes",
 ]
 
