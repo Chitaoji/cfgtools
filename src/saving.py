@@ -63,14 +63,11 @@ def _to_bytes(
     Path(path).write_bytes(bytes(json.dumps(obj.to_object()), encoding=encoding))
 
 
-WRITING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
-    "yaml": _to_yaml,
-    "yml": _to_yaml,
+SAVING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
     "pickle": _to_pickle,
-    "pkl": _to_pickle,
-    "json": _to_json,
     "ini": _to_ini,
+    "json": _to_json,
+    "yaml": _to_yaml,
     "text": _to_text,
-    "txt": _to_text,
     "bytes": _to_bytes,
 }

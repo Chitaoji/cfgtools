@@ -234,7 +234,7 @@ def read_config_from_text(
     return ConfigIOWrapper(cfg, "text", path=path, encoding=encoding)
 
 
-def _try_read_text(
+def _try_read_config_from_text(
     path: str | Path, /, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
     try:
@@ -296,11 +296,19 @@ def _obj_restore(string: str) -> "ConfigObject":
         return string
 
 
-READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
+TRY_READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "pickle": _try_read_pickle,
     "ini": _try_read_ini,
     "json": _try_read_json,
     "yaml": _try_read_yaml,
-    "text": _try_read_text,
+    "text": _try_read_config_from_text,
+    "bytes": read_config_from_bytes,
+}
+READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
+    "pickle": read_pickle,
+    "ini": read_ini,
+    "json": read_json,
+    "yaml": read_yaml,
+    "text": read_config_from_text,
     "bytes": read_config_from_bytes,
 }

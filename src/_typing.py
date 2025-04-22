@@ -16,12 +16,16 @@ logging.warning(
     "therefore unexpected errors may occur"
 )
 
-DataObject = bool | int | float | str | None
+DataObject = bool | int | float | str | bytes | None
 ConfigObject = (
     dict[DataObject, "ConfigObject"]
     | list["ConfigObject"]
     | DataObject
     | ConfigIOWrapper
 )
-ConfigFileFormat = Literal["json", "yaml", "yml", "pickle", "pkl"]
-ObjectTypeStr = Literal["dict", "list", "bool", "int", "float", "str", "NoneType"]
+ConfigFileFormat = Literal[
+    "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
+]
+ObjectTypeStr = Literal[
+    "dict", "list", "bool", "int", "float", "str", "bytes", "NoneType"
+]

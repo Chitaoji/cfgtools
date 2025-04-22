@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Self
 
-from .saving import WRITING_METHOD_MAPPING
+from .saving import SAVING_METHOD_MAPPING
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject, DataObject, ObjectTypeStr
@@ -26,6 +26,17 @@ SUFFIX_MAPPING = {
     ".ini": "ini",
     ".txt": "text",
     ".bytes": "bytes",
+}
+FORMAT_MAPPING = {
+    "yaml": "yaml",
+    "yml": "yaml",
+    "pickle": "pickle",
+    "pkl": "pickle",
+    "json": "json",
+    "ini": "ini",
+    "text": "text",
+    "txt": "text",
+    "bytes": "bytes",
 }
 MAX_LINE_WIDTH = 88
 
@@ -58,7 +69,7 @@ class ConfigIOWrapper:
             new_class = _DictConfigIOWrapper
         elif isinstance(obj, list):
             new_class = _ListConfigIOWrapper
-        elif obj is None or isinstance(obj, (bool, int, float, str)):
+        elif obj is None or isinstance(obj, (bool, int, float, str, bytes)):
             new_class = ConfigIOWrapper
         else:
             raise TypeError(
@@ -199,8 +210,10 @@ class ConfigIOWrapper:
             else:
                 fileformat = self.fileformat
         encoding = self.encoding if encoding is None else encoding
-        if fileformat in WRITING_METHOD_MAPPING:
-            WRITING_METHOD_MAPPING[fileformat](self, path, encoding=encoding)
+        if fileformat in FORMAT_MAPPING:
+            SAVING_METHOD_MAPPING[FORMAT_MAPPING[fileformat]](
+                self, path, encoding=encoding
+            )
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
@@ -315,7 +328,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         super().__init__(obj, *args, **kwargs)
         new_obj: dict["DataObject", "ConfigObject"] = {}
         for k, v in self.obj.items():
-            if k is not None and not isinstance(k, (bool, int, float, str)):
+            if k is not None and not isinstance(k, (bool, int, float, str, bytes)):
                 raise TypeError(f"invalid type of dict key: {k.__class__.__name__!r}")
             if isinstance(v, ConfigIOWrapper):
                 new_obj[k] = v
