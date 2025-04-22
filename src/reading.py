@@ -25,8 +25,8 @@ __all__ = [
     "read_pickle",
     "read_json",
     "read_ini",
-    "read_text",
-    "read_bytes",
+    "read_config_from_text",
+    "read_config_from_bytes",
 ]
 
 
@@ -50,7 +50,7 @@ def detect_encoding(path: str | Path) -> str:
     return json.detect_encoding(test_line)
 
 
-def read_yaml(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_yaml(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read a yaml file.
 
@@ -75,7 +75,7 @@ def read_yaml(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
 
 
 def _try_read_yaml(
-    path: str | Path, encoding: str | None = None
+    path: str | Path, /, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
     try:
         return read_yaml(path, encoding=encoding)
@@ -83,7 +83,7 @@ def _try_read_yaml(
         return None
 
 
-def read_pickle(path: str | Path) -> ConfigIOWrapper:
+def read_pickle(path: str | Path, /) -> ConfigIOWrapper:
     """
     Read a pickle file.
 
@@ -103,14 +103,14 @@ def read_pickle(path: str | Path) -> ConfigIOWrapper:
     return ConfigIOWrapper(cfg, "pickle", path=path)
 
 
-def _try_read_pickle(path: str | Path, **_) -> ConfigIOWrapper | None:
+def _try_read_pickle(path: str | Path, /, **_) -> ConfigIOWrapper | None:
     try:
         return read_pickle(path)
     except pickle.UnpicklingError:
         return None
 
 
-def read_json(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_json(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read a json file.
 
@@ -135,7 +135,7 @@ def read_json(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
 
 
 def _try_read_json(
-    path: str | Path, encoding: str | None = None
+    path: str | Path, /, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
     try:
         return read_json(path, encoding=encoding)
@@ -143,7 +143,7 @@ def _try_read_json(
         return None
 
 
-def read_ini(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_ini(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read an ini file.
 
@@ -183,7 +183,7 @@ def _obj_restore(string: str) -> "ConfigObject":
 
 
 def _try_read_ini(
-    path: str | Path, encoding: str | None = None
+    path: str | Path, /, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
     try:
         return read_ini(path, encoding=encoding)
@@ -191,9 +191,33 @@ def _try_read_ini(
         return None
 
 
-def read_text(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_text(path: str | Path, /, encoding: str | None = None) -> str:
     """
-    Read a text file.
+    Read plain text from a text file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the text file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    str
+        Plain text.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    return Path(path).read_text(encoding=encoding)
+
+
+def read_config_from_text(
+    path: str | Path, /, encoding: str | None = None
+) -> ConfigIOWrapper:
+    """
+    Read config from a text file.
 
     Parameters
     ----------
@@ -209,21 +233,44 @@ def read_text(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
         A wrapper for reading and writing config files.
 
     """
-    encoding = detect_encoding(path) if encoding is None else encoding
-    cfg = Path(path).read_text(encoding=encoding)
+    cfg = read_text(path, encoding=encoding)
     return ConfigIOWrapper(cfg, "text", path=path, encoding=encoding)
 
 
 def _try_read_text(
-    path: str | Path, encoding: str | None = None
+    path: str | Path, /, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
     try:
-        return read_text(path, encoding=encoding)
+        return read_config_from_text(path, encoding=encoding)
     except UnicodeDecodeError:
         return None
 
 
-def read_bytes(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper:
+def read_bytes(path: str | Path, /, encoding: str | None = None) -> bytes:
+    """
+    Read bytes from a bytes file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the bytes file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    bytes
+        Bytes.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    return Path(path).read_bytes()
+
+
+def read_config_from_bytes(
+    path: str | Path, encoding: str | None = None
+) -> ConfigIOWrapper:
     """
     Read a bytes file.
 
@@ -241,8 +288,7 @@ def read_bytes(path: str | Path, encoding: str | None = None) -> ConfigIOWrapper
         A wrapper for reading and writing config files.
 
     """
-    encoding = detect_encoding(path) if encoding is None else encoding
-    cfg = Path(path).read_bytes()
+    cfg = read_bytes(path, encoding=encoding)
     return ConfigIOWrapper(cfg, "bytes", path=path, encoding=encoding)
 
 
@@ -252,5 +298,5 @@ READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "json": _try_read_json,
     "yaml": _try_read_yaml,
     "text": _try_read_text,
-    "bytes": read_bytes,
+    "bytes": read_config_from_bytes,
 }
