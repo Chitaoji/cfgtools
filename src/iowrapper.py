@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Self
 
 from .saving import SAVING_METHOD_MAPPING
+from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject, DataObject, ObjectTypeStr
