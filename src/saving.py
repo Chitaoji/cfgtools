@@ -51,11 +51,11 @@ def _to_ini(
 def _to_text(
     obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
 ) -> None:
-    Path(path).write_text(repr(obj.to_object()), encoding=encoding)
+    Path(path).write_text(json.dumps(obj.to_object()), encoding=encoding)
 
 
 def _to_bytes(obj: "ConfigIOWrapper", path: str | Path | None, **_) -> None:
-    Path(path).write_bytes(repr(obj.to_object()))
+    Path(path).write_bytes(json.dumps(obj.to_object()))
 
 
 WRITING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
