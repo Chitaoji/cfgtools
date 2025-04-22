@@ -8,6 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import pickle
+import sys
 from configparser import ConfigParser
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
@@ -54,8 +55,12 @@ def _to_text(
     Path(path).write_text(json.dumps(obj.to_object()), encoding=encoding)
 
 
-def _to_bytes(obj: "ConfigIOWrapper", path: str | Path | None, **_) -> None:
-    Path(path).write_bytes(json.dumps(obj.to_object()))
+def _to_bytes(
+    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
+) -> None:
+    if encoding is None:
+        encoding = sys.getdefaultencoding()
+    Path(path).write_bytes(bytes(json.dumps(obj.to_object()), encoding=encoding))
 
 
 WRITING_METHOD_MAPPING: dict[str, Callable[..., None]] = {

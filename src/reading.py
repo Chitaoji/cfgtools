@@ -83,6 +83,8 @@ def _try_read_yaml(
         return read_yaml(path, encoding=encoding)
     except yaml.reader.ReaderError:
         return None
+    except yaml.scanner.ScannerError:
+        return None
 
 
 def read_pickle(path: str | Path, /) -> ConfigIOWrapper:
@@ -177,13 +179,6 @@ def read_ini(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrappe
     return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
 
 
-def _obj_restore(string: str) -> "ConfigObject":
-    try:
-        return json.loads(string)
-    except json.JSONDecodeError:
-        return string
-
-
 def _try_read_ini(
     path: str | Path, /, encoding: str | None = None
 ) -> ConfigIOWrapper | None:
@@ -235,7 +230,7 @@ def read_config_from_text(
         A wrapper for reading and writing config files.
 
     """
-    cfg = read_text(path, encoding=encoding)
+    cfg = _obj_restore(read_text(path, encoding=encoding))
     return ConfigIOWrapper(cfg, "text", path=path, encoding=encoding)
 
 
@@ -290,8 +285,15 @@ def read_config_from_bytes(
         A wrapper for reading and writing config files.
 
     """
-    cfg = read_bytes(path, encoding=encoding)
+    cfg = _obj_restore(read_bytes(path, encoding=encoding))
     return ConfigIOWrapper(cfg, "bytes", path=path, encoding=encoding)
+
+
+def _obj_restore(string: str) -> "ConfigObject":
+    try:
+        return json.loads(string)
+    except json.JSONDecodeError:
+        return string
 
 
 READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {

@@ -25,6 +25,7 @@ SUFFIX_MAPPING = {
     ".json": "json",
     ".ini": "ini",
     ".txt": "text",
+    ".bytes": "bytes",
 }
 MAX_LINE_WIDTH = 88
 
