@@ -11,24 +11,24 @@ class HTMLTreeMaker:
 
     Parameters
     ----------
-    title : str, optional
-        Title of child node, by default None.
+    name : str, optional
+        Name of child node, by default None.
 
 
     """
 
-    def __init__(self, title: str | None = None, /) -> None:
-        self.title = title
-        self.children: dict[str, Self] = {}
+    def __init__(self, name: str | None = None, /) -> None:
+        self.name = name
+        self.children: list[Self] = []
 
-    def add_node(self, title: str | None = None, /) -> Self:
+    def add(self, maybe_name: str | Self, /) -> Self:
         """
         Add a child node, and return it.
 
         Parameters
         ----------
-        title : str, optional
-            Title of child node, by default None.
+        maybe_name : str | Self
+            Name or instance of the child node.
 
         Returns
         -------
@@ -36,28 +36,34 @@ class HTMLTreeMaker:
             The new node.
 
         """
-        if title in self.children:
-            raise ValueError(f"node {title!r} already exists")
-        self.children[title] = self.__class__(title)
+        if isinstance(maybe_name, str):
+            child = self.__class__(maybe_name)
+        else:
+            child = maybe_name
+        self.children.append(child)
+        return child
 
-    def del_node(self, title: str | None = None, /) -> None:
-        """
-        Delete a child node.
+    # def discard(self, name: str, /) -> None:
+    #     """Discard a child node."""
+    #     if name not in self.children:
+    #         raise ValueError(f"node {name!r} not found")
+    #     del self.children[name]
 
-        Parameters
-        ----------
-        title : str, optional
-            Title of child node, by default None.
+    # def get(self, name: str, /) -> Self:
+    #     """Get a child node."""
+    #     if name not in self.children:
+    #         raise ValueError(f"node {name!r} not found")
+    #     return self.children[name]
 
-        """
-        if title not in self.children:
-            raise ValueError(f"node {title!r} not found")
-        del self.children[title]
+    def set_name(self, name: str) -> Self:
+        """Set node name."""
+        self.name = name
+        return self
 
     def make(self, class_name: str | None = None, style: str = "") -> str:
         """Make a string of the HTML tree."""
         if class_name is None:
-            class_name = self.title
+            class_name = self.name
         return f"""{style}<ul class="{class_name}">
 {self.make_plain()}
 </ul>"""
@@ -65,4 +71,12 @@ class HTMLTreeMaker:
     def make_plain(self) -> str:
         """Make a string of the HTML tree without style."""
         if not self.children:
-            return f"""<li class="m"><span>{self.title}</span></li>"""
+            return f'<li class="m"><span>{self.name}</span></li>'
+        children_str = "\n".join(x.make_plain() for x in self.children)
+        if self.name is None:
+            return children_str
+        return f"""<li class="m"><details><summary>{self.name}</summary>
+<ul class="m">
+{children_str}
+</ul>
+</details></li>"""
