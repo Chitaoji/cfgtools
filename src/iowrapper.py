@@ -270,7 +270,7 @@ class ConfigIOWrapper:
         """Returns the config object without any wrapper."""
         return self.obj
 
-    def to_html(self) -> HTMLTreeMaker | list[HTMLTreeMaker]:
+    def to_html(self) -> HTMLTreeMaker:
         """Return an HTML text for representing self."""
         return HTMLTreeMaker(repr(self.obj))
 
@@ -346,17 +346,19 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
     def to_object(self) -> "ConfigObject":
         return {k: v.to_object() for k, v in self.obj.items()}
 
-    def to_html(self) -> list[HTMLTreeMaker]:
+    def to_html(self) -> HTMLTreeMaker:
         maker = HTMLTreeMaker("{")
         for k, v in self.obj.items():
             node = v.to_html()
-            if isinstance(node, list):
-                node[0].setval(f"{k!r}: {node[0].value}")
-                node[-1].setval(f"{node[-1].value},")
+            if node.has_child():
+                node.setval(f"{k!r}: {node.getval()}")
+                tail = node.get(-1)
+                tail.setval(f"{tail.getval()},")
             else:
-                node.setval(f"{k!r}: {node.value},")
+                node.setval(f"{k!r}: {node.getval()},")
             maker.add(node)
-        return [maker, HTMLTreeMaker("}")]
+        maker.add("}")
+        return maker
 
 
 class _ListConfigIOWrapper(ConfigIOWrapper):
@@ -419,16 +421,19 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
     def to_object(self) -> "ConfigObject":
         return [x.to_object() for x in self.obj]
 
-    def to_html(self) -> list[HTMLTreeMaker]:
+    def to_html(self) -> HTMLTreeMaker:
         maker = HTMLTreeMaker("[")
         for x in self.obj:
             node = x.to_html()
-            if isinstance(node, list):
-                node[-1].setval(f"{node[-1].value},")
+            if node.has_child():
+                node.setval(f"{node.getval()}")
+                tail = node.get(-1)
+                tail.setval(f"{tail.getval()},")
             else:
-                node.setval(f"{node.value},")
+                node.setval(f"{node.getval()},")
             maker.add(node)
-        return [maker, HTMLTreeMaker("]")]
+        maker.add("]")
+        return maker
 
 
 def _sep(level: int) -> str:
