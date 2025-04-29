@@ -67,7 +67,8 @@ class HTMLTreeMaker:
         """Make a string of the HTML tree."""
         if class_name is None:
             class_name = self.__val
-        return f"""{style}<ul class="{class_name}">
+        return f"""{style}
+<ul class="{class_name}">
 {self.make_plain()}
 </ul>"""
 

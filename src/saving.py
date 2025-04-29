@@ -71,8 +71,7 @@ class ConfigSaver:
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
-        if encoding is None:
-            encoding = sys.getdefaultencoding()
+        encoding = sys.getdefaultencoding() if encoding is None else encoding
         Path(path).write_bytes(bytes(json.dumps(self.to_object()), encoding=encoding))
 
     def save(
