@@ -6,11 +6,10 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
-import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Self
 
-from .saving import SAVING_METHOD_MAPPING
+from .saving import ConfigSaver
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
@@ -42,7 +41,7 @@ FORMAT_MAPPING = {
 MAX_LINE_WIDTH = 88
 
 
-class ConfigIOWrapper:
+class ConfigIOWrapper(ConfigSaver):
     """
     A wrapper for reading and writing config files.
 
@@ -217,54 +216,9 @@ class ConfigIOWrapper:
                 fileformat = self.fileformat
         encoding = self.encoding if encoding is None else encoding
         if fileformat in FORMAT_MAPPING:
-            SAVING_METHOD_MAPPING[FORMAT_MAPPING[fileformat]](
-                self, path, encoding=encoding
-            )
+            self.use_saver(path, FORMAT_MAPPING[fileformat], encoding=encoding)
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
-
-    def to_json(
-        self, path: str | Path | None = None, /, encoding: str | None = None
-    ) -> None:
-        """Save the config in a json file. See `self.save()` for more details."""
-        self.save(path, "json", encoding=encoding)
-
-    def to_yaml(
-        self, path: str | Path | None = None, /, encoding: str | None = None
-    ) -> None:
-        """Save the config in a yaml file. See `self.save()` for more details."""
-        self.save(path, "yaml", encoding=encoding)
-
-    def to_pickle(self, path: str | Path | None = None, /) -> None:
-        """Save the config in a pickle file. See `self.save()` for more details."""
-        self.save(path, "pickle")
-
-    def to_ini(
-        self, path: str | Path | None = None, /, encoding: str | None = None
-    ) -> None:
-        """Save the config in an ini file. See `self.save()` for more details."""
-        self.save(path, "ini", encoding=encoding)
-
-    def to_ini_dict(self) -> dict:
-        """Reformat the config object with `.ini` format, and returns a dict."""
-        obj = self.to_object()
-        if isinstance(obj, dict):
-            if all(isinstance(v, dict) for v in obj.values()):
-                return {
-                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
-                }
-            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
-        return {"null": {"null": json.dumps(obj)}}
-
-    def to_text(
-        self, path: str | Path | None = None, /, encoding: str | None = None
-    ) -> None:
-        """Save the config in a text file. See `self.save()` for more details."""
-        self.save(path, "text", encoding=encoding)
-
-    def to_bytes(self, path: str | Path | None = None, /) -> None:
-        """Save the config in a bytes file. See `self.save()` for more details."""
-        self.save(path, "bytes")
 
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""

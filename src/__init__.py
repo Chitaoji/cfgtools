@@ -42,13 +42,13 @@ lazyr.VERBOSE = 0
 lazyr.register("yaml")
 
 # pylint: disable=wrong-import-position
-from . import core, iowrapper, reading
+from . import core, iowrapper, reader
 from .__version__ import __version__
 from .core import *
 from .iowrapper import *
-from .reading import *
+from .reader import *
 
 __all__: list[str] = []
 __all__.extend(core.__all__)
-__all__.extend(reading.__all__)
+__all__.extend(reader.__all__)
 __all__.extend(iowrapper.__all__)

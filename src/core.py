@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
-from .reading import READING_METHOD_MAPPING, TRY_READING_METHOD_MAPPING, detect_encoding
+from .reader import READER_MAPPING, TRY_READER_MAPPING, detect_encoding
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject
@@ -50,11 +50,9 @@ def read_config(
     if fileformat is not None:
         if fileformat not in FORMAT_MAPPING:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
-        return READING_METHOD_MAPPING[FORMAT_MAPPING[fileformat]](
-            path, encoding=encoding
-        )
+        return READER_MAPPING[FORMAT_MAPPING[fileformat]](path, encoding=encoding)
     else:
-        for m in TRY_READING_METHOD_MAPPING.values():
+        for m in TRY_READER_MAPPING.values():
             if (wrapper := m(path, encoding=encoding)) is not None:
                 return wrapper
     raise FileFormatError(f"failed to read the config file: '{path}'")

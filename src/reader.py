@@ -298,7 +298,7 @@ def _obj_restore(string: str) -> "ConfigObject":
         return string
 
 
-TRY_READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
+TRY_READER_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "pickle": _try_read_pickle,
     "ini": _try_read_ini,
     "json": _try_read_json,
@@ -306,7 +306,7 @@ TRY_READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "text": _try_read_config_from_text,
     "bytes": read_config_from_bytes,
 }
-READING_METHOD_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
+READER_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
     "pickle": read_pickle,
     "ini": read_ini,
     "json": read_json,

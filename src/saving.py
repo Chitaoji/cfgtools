@@ -16,58 +16,80 @@ from typing import TYPE_CHECKING, Callable
 import yaml
 
 if TYPE_CHECKING:
-    from .iowrapper import ConfigIOWrapper
+    from ._typing import ConfigFileFormat, ConfigObject
+
 
 __all__ = []
 
 
-def _to_yaml(
-    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
-) -> None:
-    with open(path, "w", encoding=encoding) as f:
-        yaml.safe_dump(obj.to_object(), f, sort_keys=False)
+class ConfigSaver:
+    """Config saver."""
 
+    def to_object(self) -> "ConfigObject":
+        """Returns the config object without any wrapper."""
+        return NotImplemented
 
-def _to_pickle(obj: "ConfigIOWrapper", path: str | Path | None, **_) -> None:
-    with open(path, "wb") as f:
-        pickle.dump(obj.to_object(), f)
+    def to_ini_dict(self) -> dict:
+        """Reformat the config object with `.ini` format, and returns a dict."""
+        return NotImplemented
 
+    def to_yaml(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        with open(path, "w", encoding=encoding) as f:
+            yaml.safe_dump(self.to_object(), f, sort_keys=False)
 
-def _to_json(
-    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
-) -> None:
-    with open(path, "w", encoding=encoding) as f:
-        json.dump(obj.to_object(), f)
+    def to_pickle(self, path: str | Path | None = None, /) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        with open(path, "wb") as f:
+            pickle.dump(self.to_object(), f)
 
+    def to_json(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        with open(path, "w", encoding=encoding) as f:
+            json.dump(self.to_object(), f)
 
-def _to_ini(
-    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
-) -> None:
-    parser = ConfigParser()
-    parser.read_dict(obj.to_ini_dict())
-    with open(path, "w", encoding=encoding) as f:
-        parser.write(f)
+    def to_ini(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        parser = ConfigParser()
+        parser.read_dict(self.to_ini_dict())
+        with open(path, "w", encoding=encoding) as f:
+            parser.write(f)
 
+    def to_text(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        Path(path).write_text(json.dumps(self.to_object()), encoding=encoding)
 
-def _to_text(
-    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
-) -> None:
-    Path(path).write_text(json.dumps(obj.to_object()), encoding=encoding)
+    def to_bytes(self, path: str | Path | None = None, /) -> None:
+        """Save the config in a json file. See `self.save()` for more details."""
+        if encoding is None:
+            encoding = sys.getdefaultencoding()
+        Path(path).write_bytes(bytes(json.dumps(self.to_object()), encoding=None))
 
-
-def _to_bytes(
-    obj: "ConfigIOWrapper", path: str | Path | None, encoding: str | None = None
-) -> None:
-    if encoding is None:
-        encoding = sys.getdefaultencoding()
-    Path(path).write_bytes(bytes(json.dumps(obj.to_object()), encoding=encoding))
-
-
-SAVING_METHOD_MAPPING: dict[str, Callable[..., None]] = {
-    "pickle": _to_pickle,
-    "ini": _to_ini,
-    "json": _to_json,
-    "yaml": _to_yaml,
-    "text": _to_text,
-    "bytes": _to_bytes,
-}
+    def use_saver(
+        self,
+        path: str | Path | None,
+        fileformat: "ConfigFileFormat",
+        encoding: str | None,
+    ) -> Callable[..., None]:
+        """Use the saver."""
+        match fileformat:
+            case "pickle":
+                return self.to_pickle(path)
+            case "ini":
+                return self.to_ini(path, encoding)
+            case "json":
+                return self.to_json(path, encoding)
+            case "yaml":
+                return self.to_yaml(path, encoding)
+            case "text":
+                return self.to_text(path, encoding)
+            case "bytes":
+                return self.to_bytes(path)
