@@ -216,7 +216,7 @@ class ConfigIOWrapper(ConfigSaver):
                 fileformat = self.fileformat
         encoding = self.encoding if encoding is None else encoding
         if fileformat in FORMAT_MAPPING:
-            self.use_saver(path, FORMAT_MAPPING[fileformat], encoding=encoding)
+            super().save(path, FORMAT_MAPPING[fileformat], encoding=encoding)
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 

@@ -67,19 +67,22 @@ class ConfigSaver:
         """Save the config in a json file. See `self.save()` for more details."""
         Path(path).write_text(json.dumps(self.to_object()), encoding=encoding)
 
-    def to_bytes(self, path: str | Path | None = None, /) -> None:
+    def to_bytes(
+        self, path: str | Path | None = None, /, encoding: str | None = None
+    ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         if encoding is None:
             encoding = sys.getdefaultencoding()
-        Path(path).write_bytes(bytes(json.dumps(self.to_object()), encoding=None))
+        Path(path).write_bytes(bytes(json.dumps(self.to_object()), encoding=encoding))
 
-    def use_saver(
+    def save(
         self,
-        path: str | Path | None,
-        fileformat: "ConfigFileFormat",
-        encoding: str | None,
+        path: str | Path | None = None,
+        fileformat: "ConfigFileFormat | None" = None,
+        /,
+        encoding: str | None = None,
     ) -> Callable[..., None]:
-        """Use the saver."""
+        """Access the saver."""
         match fileformat:
             case "pickle":
                 return self.to_pickle(path)
@@ -92,4 +95,4 @@ class ConfigSaver:
             case "text":
                 return self.to_text(path, encoding)
             case "bytes":
-                return self.to_bytes(path)
+                return self.to_bytes(path, encoding)
