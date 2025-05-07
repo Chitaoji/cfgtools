@@ -13,8 +13,9 @@ class HTMLTreeMaker:
     ----------
     value : str, optional
         Value of child node, by default None.
-    clsname : str, optional
-        Class name, by default "m".
+    clsname : str | None, optional
+        Class name, by default None. If not specifeid, the class name will
+        be "m" ("m" for "main").
     default_level : int, optional
         Default levels to set open, by default 2.
 
@@ -23,17 +24,17 @@ class HTMLTreeMaker:
     def __init__(
         self,
         value: str | None = None,
-        clsname: str = "m",
+        clsname: str | None = None,
         default_level: int = 3,
         /,
     ) -> None:
         self.__val = value
-        self.__cls = clsname
+        self.__cls = "m" if clsname is None else clsname
         self.__default_level = default_level
         self.__children: list[Self] = []
 
     def add(
-        self, maybe_value: str | Self | list[Self], maybe_cls: str = "m", /
+        self, maybe_value: str | Self | list[Self], maybe_cls: str | None = None
     ) -> None:
         """
         Add a child node, and return it.
@@ -42,8 +43,8 @@ class HTMLTreeMaker:
         ----------
         maybe_value : str | Self | list[Self]
             Node value or the instance(s) of the child node(s).
-        maybe_cls : str, optional
-            May be used as the class name, by default "m".
+        maybe_cls : str | None, optional
+            May be used as the class name, by default None.
 
         Returns
         -------
@@ -54,8 +55,13 @@ class HTMLTreeMaker:
         if isinstance(maybe_value, str):
             self.__children.append(self.__class__(maybe_value, maybe_cls))
         elif isinstance(maybe_value, list):
+            if maybe_cls:
+                for x in maybe_value:
+                    x.setcls(maybe_cls)
             self.__children.extend(maybe_value)
         else:
+            if maybe_cls:
+                maybe_value.setcls(maybe_cls)
             self.__children.append(maybe_value)
 
     def discard(self, index: int, /) -> None:
@@ -66,7 +72,7 @@ class HTMLTreeMaker:
         """Get the n-th child node."""
         return self.__children[index]
 
-    def setval(self, value: str) -> None:
+    def setval(self, value: str, /) -> None:
         """Set the node value."""
         self.__val = value
 
@@ -74,7 +80,7 @@ class HTMLTreeMaker:
         """Get the node value."""
         return self.__val
 
-    def setcls(self, clsname: str) -> None:
+    def setcls(self, clsname: str, /) -> None:
         """Set the node class name."""
         self.__cls = clsname
 
@@ -92,15 +98,16 @@ class HTMLTreeMaker:
             clsname = self.__val
         return f'{style}\n<ul class="{clsname}">\n{self.make_plain(0)}\n</ul>'
 
-    def make_plain(self, level: int) -> str:
-        """Make a string of the HTML tree without style."""
+    def make_plain(self, level: int, /) -> str:
+        """Make a string of the HTML tree without css style."""
         if not self.__children:
             return f'<li class="{self.__cls}"><span>{self.__val}</span></li>'
         children_str = "\n".join(x.make_plain(level + 1) for x in self.__children)
         if self.__val is None:
             return children_str
-        is_open = " open" if level < self.__default_level else ""
+        details_open = " open" if level < self.__default_level else ""
         return (
-            f'<li class="{self.__cls}"><details{is_open}><summary>{self.__val}'
-            f'</summary>\n<ul class="{self.__cls}">\n{children_str}\n</ul>\n</details></li>'
+            f'<li class="{self.__cls}"><details{details_open}><summary>{self.__val}'
+            f'</summary>\n<ul class="{self.__cls}">\n{children_str}\n</ul>\n'
+            "</details></li>"
         )
