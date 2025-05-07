@@ -13,15 +13,28 @@ class HTMLTreeMaker:
     ----------
     value : str, optional
         Value of child node, by default None.
-
+    clsname : str, optional
+        Class name, by default "m".
+    default_level : int, optional
+        Default levels to set open, by default 2.
 
     """
 
-    def __init__(self, value: str | None = None, /) -> None:
+    def __init__(
+        self,
+        value: str | None = None,
+        clsname: str = "m",
+        default_level: int = 3,
+        /,
+    ) -> None:
         self.__val = value
+        self.__cls = clsname
+        self.__default_level = default_level
         self.__children: list[Self] = []
 
-    def add(self, maybe_value: str | Self | list[Self], /) -> None:
+    def add(
+        self, maybe_value: str | Self | list[Self], maybe_cls: str = "m", /
+    ) -> None:
         """
         Add a child node, and return it.
 
@@ -29,6 +42,8 @@ class HTMLTreeMaker:
         ----------
         maybe_value : str | Self | list[Self]
             Node value or the instance(s) of the child node(s).
+        maybe_cls : str, optional
+            May be used as the class name, by default "m".
 
         Returns
         -------
@@ -37,7 +52,7 @@ class HTMLTreeMaker:
 
         """
         if isinstance(maybe_value, str):
-            self.__children.append(self.__class__(maybe_value))
+            self.__children.append(self.__class__(maybe_value, maybe_cls))
         elif isinstance(maybe_value, list):
             self.__children.extend(maybe_value)
         else:
@@ -59,28 +74,33 @@ class HTMLTreeMaker:
         """Get the node value."""
         return self.__val
 
+    def setcls(self, clsname: str) -> None:
+        """Set the node class name."""
+        self.__cls = clsname
+
+    def getcls(self) -> str | None:
+        """Get the node class name."""
+        return self.__cls
+
     def has_child(self) -> bool:
         """Return whether there is a child node."""
         return bool(self.__children)
 
-    def make(self, class_name: str | None = None, style: str = "") -> str:
+    def make(self, clsname: str | None = None, style: str = "") -> str:
         """Make a string of the HTML tree."""
-        if class_name is None:
-            class_name = self.__val
-        return f"""{style}
-<ul class="{class_name}">
-{self.make_plain()}
-</ul>"""
+        if clsname is None:
+            clsname = self.__val
+        return f'{style}\n<ul class="{clsname}">\n{self.make_plain(0)}\n</ul>'
 
-    def make_plain(self) -> str:
+    def make_plain(self, level: int) -> str:
         """Make a string of the HTML tree without style."""
         if not self.__children:
-            return f'<li class="m"><span>{self.__val}</span></li>'
-        children_str = "\n".join(x.make_plain() for x in self.__children)
+            return f'<li class="{self.__cls}"><span>{self.__val}</span></li>'
+        children_str = "\n".join(x.make_plain(level + 1) for x in self.__children)
         if self.__val is None:
             return children_str
-        return f"""<li class="m"><details><summary>{self.__val}</summary>
-<ul class="m">
-{children_str}
-</ul>
-</details></li>"""
+        is_open = " open" if level < self.__default_level else ""
+        return (
+            f'<li class="{self.__cls}"><details{is_open}><summary>{self.__val}'
+            f'</summary>\n<ul class="{self.__cls}">\n{children_str}\n</ul>\n</details></li>'
+        )

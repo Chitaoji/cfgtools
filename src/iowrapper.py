@@ -130,7 +130,18 @@ class ConfigIOWrapper(ConfigSaver):
             merged_html = HTMLTreeMaker()
             merged_html.add(html)
             html = merged_html
-        return {"text/html": html.make("cfgtools-tree", TREE_CSS_STYLE)}
+        header = (
+            f"format: {self.fileformat!r} | path: {self.path!r} "
+            f"| encoding: {self.encoding!r}"
+        )
+        divide_line = "-" * int(len(header) + 4)
+        html.setcls("t")
+        main_html = HTMLTreeMaker()
+        main_html.add(html)
+        main_html.add(divide_line, "t")
+        main_html.add(header, "t")
+        main_html.add(divide_line, "t")
+        return {"text/html": main_html.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
         return f"config({self.obj!r})"
@@ -302,7 +313,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         return {k: v.to_object() for k, v in self.obj.items()}
 
     def to_html(self) -> HTMLTreeMaker:
-        maker = HTMLTreeMaker("{")
+        maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
         for k, v in self.obj.items():
             node = v.to_html()
             if node.has_child():
@@ -312,7 +323,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
             else:
                 node.setval(f"{k!r}: {node.getval()},")
             maker.add(node)
-        maker.add("}")
+        maker.add("}", "t")
         return maker
 
 
@@ -377,7 +388,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         return [x.to_object() for x in self.obj]
 
     def to_html(self) -> HTMLTreeMaker:
-        maker = HTMLTreeMaker("[")
+        maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
         for x in self.obj:
             node = x.to_html()
             if node.has_child():
@@ -387,7 +398,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
             else:
                 node.setval(f"{node.getval()},")
             maker.add(node)
-        maker.add("]")
+        maker.add("]", "t")
         return maker
 
 
