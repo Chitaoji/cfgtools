@@ -92,10 +92,24 @@ class HTMLTreeMaker:
         """Return whether there is a child node."""
         return bool(self.__children)
 
-    def make(self, clsname: str | None = None, style: str = "") -> str:
+    def make(self, clsname: str | None = None, style: str | None = None) -> str:
         """Make a string of the HTML tree."""
         if clsname is None:
-            clsname = self.__val
+            clsname = "tree"
+        if style is None:
+            style = f"""<style type="text/css">
+.{clsname} li>details>summary>span.open,
+.{clsname} li>details[open]>summary>span.closed {{
+    display: none;
+}}
+.{clsname} li>details[open]>summary>span.open {{
+    display: inline;
+}}
+.{clsname} li>details>summary {{
+    display: block;
+    cursor: pointer;
+}}
+</style>"""
         return f'{style}\n<ul class="{clsname}">\n{self.make_plain(0)}\n</ul>'
 
     def make_plain(self, level: int, /) -> str:
