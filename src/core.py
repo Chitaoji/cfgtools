@@ -9,8 +9,8 @@ NOTE: this module is private. All functions and objects are available in the mai
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
-from .reader import READER_MAPPING, TRY_READER_MAPPING, detect_encoding
+from .iowrapper import ConfigIOWrapper
+from .reader import ConfigReader
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, ConfigObject
@@ -46,16 +46,7 @@ def read_config(
         A wrapper for reading and writing config files.
 
     """
-    encoding = detect_encoding(path) if encoding is None else encoding
-    if fileformat is not None:
-        if fileformat not in FORMAT_MAPPING:
-            raise FileFormatError(f"unsupported config file format: {fileformat!r}")
-        return READER_MAPPING[FORMAT_MAPPING[fileformat]](path, encoding=encoding)
-    else:
-        for m in TRY_READER_MAPPING.values():
-            if (wrapper := m(path, encoding=encoding)) is not None:
-                return wrapper
-    raise FileFormatError(f"failed to read the config file: '{path}'")
+    return ConfigReader.read(path, fileformat, encoding=encoding)
 
 
 def config(obj: "ConfigObject" = None, /) -> ConfigIOWrapper:

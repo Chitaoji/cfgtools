@@ -14,10 +14,10 @@ from typing import TYPE_CHECKING, Callable
 
 import yaml
 
-from .iowrapper import ConfigIOWrapper
+from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
 
 if TYPE_CHECKING:
-    from ._typing import ConfigObject
+    from ._typing import ConfigFileFormat, ConfigObject
 
 __all__ = [
     "detect_encoding",
@@ -76,17 +76,6 @@ def read_yaml(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapp
     return ConfigIOWrapper(cfg, "yaml", path=path, encoding=encoding)
 
 
-def _try_read_yaml(
-    path: str | Path, /, encoding: str | None = None
-) -> ConfigIOWrapper | None:
-    try:
-        return read_yaml(path, encoding=encoding)
-    except yaml.reader.ReaderError:
-        return None
-    except yaml.scanner.ScannerError:
-        return None
-
-
 def read_pickle(path: str | Path, /) -> ConfigIOWrapper:
     """
     Read a pickle file.
@@ -105,13 +94,6 @@ def read_pickle(path: str | Path, /) -> ConfigIOWrapper:
     with open(path, "rb") as f:
         cfg = pickle.load(f)
     return ConfigIOWrapper(cfg, "pickle", path=path)
-
-
-def _try_read_pickle(path: str | Path, /, **_) -> ConfigIOWrapper | None:
-    try:
-        return read_pickle(path)
-    except pickle.UnpicklingError:
-        return None
 
 
 def read_json(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
@@ -136,15 +118,6 @@ def read_json(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapp
     with open(path, "r", encoding=encoding) as f:
         cfg = json.load(f)
     return ConfigIOWrapper(cfg, "json", path=path, encoding=encoding)
-
-
-def _try_read_json(
-    path: str | Path, /, encoding: str | None = None
-) -> ConfigIOWrapper | None:
-    try:
-        return read_json(path, encoding=encoding)
-    except json.JSONDecodeError:
-        return None
 
 
 def read_ini(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
@@ -177,15 +150,6 @@ def read_ini(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrappe
         if len(obj) == 1 and "null" in obj:
             obj = obj["null"]
     return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
-
-
-def _try_read_ini(
-    path: str | Path, /, encoding: str | None = None
-) -> ConfigIOWrapper | None:
-    try:
-        return read_ini(path, encoding=encoding)
-    except MissingSectionHeaderError:
-        return None
 
 
 def read_text(path: str | Path, /, encoding: str | None = None) -> str:
@@ -232,15 +196,6 @@ def read_config_from_text(
     """
     cfg = _obj_restore(read_text(path, encoding=encoding))
     return ConfigIOWrapper(cfg, "text", path=path, encoding=encoding)
-
-
-def _try_read_config_from_text(
-    path: str | Path, /, encoding: str | None = None
-) -> ConfigIOWrapper | None:
-    try:
-        return read_config_from_text(path, encoding=encoding)
-    except UnicodeDecodeError:
-        return None
 
 
 def read_bytes(path: str | Path, /, encoding: str | None = None) -> bytes:
@@ -298,19 +253,92 @@ def _obj_restore(string: str) -> "ConfigObject":
         return string
 
 
-TRY_READER_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
-    "pickle": _try_read_pickle,
-    "ini": _try_read_ini,
-    "json": _try_read_json,
-    "yaml": _try_read_yaml,
-    "text": _try_read_config_from_text,
-    "bytes": read_config_from_bytes,
-}
-READER_MAPPING: dict[str, Callable[..., ConfigIOWrapper | None]] = {
-    "pickle": read_pickle,
-    "ini": read_ini,
-    "json": read_json,
-    "yaml": read_yaml,
-    "text": read_config_from_text,
-    "bytes": read_config_from_bytes,
-}
+class ConfigReader:
+    """Config reader."""
+
+    reader_mapping: dict[str, Callable[..., ConfigIOWrapper | None]] = {
+        "pickle": read_pickle,
+        "ini": read_ini,
+        "json": read_json,
+        "yaml": read_yaml,
+        "text": read_config_from_text,
+        "bytes": read_config_from_bytes,
+    }
+
+    @classmethod
+    def read(
+        cls,
+        path: str | Path,
+        fileformat: "ConfigFileFormat | None" = None,
+        /,
+        encoding: str | None = None,
+    ):
+        """Read from the config file."""
+        encoding = detect_encoding(path) if encoding is None else encoding
+        if fileformat is None:
+            methods: tuple[Callable[..., ConfigIOWrapper | None]] = (
+                cls._try_read_pickle,
+                cls._try_read_ini,
+                cls._try_read_json,
+                cls._try_read_yaml,
+                cls._try_read_config_from_text,
+                read_config_from_bytes,
+            )
+            for m in methods:
+                if (wrapper := m(path, encoding=encoding)) is not None:
+                    return wrapper
+            raise FileFormatError(f"failed to read the config file: '{path}'")
+        else:
+            if fileformat not in FORMAT_MAPPING:
+                raise FileFormatError(f"unsupported config file format: {fileformat!r}")
+            return cls.reader_mapping[FORMAT_MAPPING[fileformat]](
+                path, encoding=encoding
+            )
+
+    @staticmethod
+    def _try_read_pickle(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        _ = encoding
+        try:
+            return read_pickle(path)
+        except pickle.UnpicklingError:
+            return None
+
+    @staticmethod
+    def _try_read_ini(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        try:
+            return read_ini(path, encoding=encoding)
+        except MissingSectionHeaderError:
+            return None
+
+    @staticmethod
+    def _try_read_json(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        try:
+            return read_json(path, encoding=encoding)
+        except json.JSONDecodeError:
+            return None
+
+    @staticmethod
+    def _try_read_yaml(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        try:
+            return read_yaml(path, encoding=encoding)
+        except yaml.reader.ReaderError:
+            return None
+        except yaml.scanner.ScannerError:
+            return None
+
+    @staticmethod
+    def _try_read_config_from_text(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        try:
+            return read_config_from_text(path, encoding=encoding)
+        except UnicodeDecodeError:
+            return None

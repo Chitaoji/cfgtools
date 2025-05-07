@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Self
 
 from .css import TREE_CSS_STYLE
-from .saving import ConfigSaver
+from .saver import ConfigSaver
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
