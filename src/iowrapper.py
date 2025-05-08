@@ -113,35 +113,32 @@ class ConfigIOWrapper(ConfigSaver):
         self.save()
 
     def __repr__(self) -> str:
-        header = (
+        info = (
             f"format: {self.fileformat!r} | path: {self.path!r} "
             f"| encoding: {self.encoding!r}"
         )
-        divide_line = "-" * len(header)
+        divide_line = "-" * len(info)
         if len(flat := repr(self.to_object())) <= MAX_LINE_WIDTH:
             reprs = flat
         else:
             reprs = self.repr()
-        return f"{reprs}\n{divide_line}\n{header}\n{divide_line}"
+        return f"{reprs}\n{divide_line}\n{info}\n{divide_line}"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
-        html = self.to_html()
-        if isinstance(html, list):
+        maker = self.to_html()
+        if isinstance(maker, list):
             merged_html = HTMLTreeMaker()
-            merged_html.add(html)
-            html = merged_html
-        header = (
+            merged_html.add(maker)
+            maker = merged_html
+        info = (
             f"format: {self.fileformat!r} | path: {self.path!r} "
             f"| encoding: {self.encoding!r}"
         )
-        divide_line = "-" * int(len(header) + 4)
-        html.setcls("t")
-        main_html = HTMLTreeMaker()
-        main_html.add(html)
-        main_html.add(divide_line, "t")
-        main_html.add(header, "t")
-        main_html.add(divide_line, "t")
-        return {"text/html": main_html.make("cfgtools-tree", TREE_CSS_STYLE)}
+        maker.setcls("t")
+        main_maker = HTMLTreeMaker()
+        main_maker.add(maker)
+        main_maker.add(info, "i")
+        return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
         return f"config({self.obj!r})"
