@@ -104,10 +104,7 @@ class ConfigIOWrapper(ConfigSaver):
 
     def __enter__(self) -> Self:
         if self.path is None:
-            raise TypeError(
-                "failed to access method '.__enter__()' because the config "
-                "object was not read from a file"
-            )
+            raise TypeError("no default file path, please run 'self.set_path()' first")
         if not self.__overwrite_ok:
             raise TypeError(
                 "overwriting the original path is not allowed, please run "
@@ -221,7 +218,8 @@ class ConfigIOWrapper(ConfigSaver):
         if path is None:
             if self.path is None:
                 raise ValueError(
-                    "failed to save the config because no path is specified"
+                    "no default file path, please specify the path or run "
+                    "'self.set_path()' first"
                 )
             if not self.__overwrite_ok:
                 raise TypeError(
@@ -251,6 +249,12 @@ class ConfigIOWrapper(ConfigSaver):
     def type(self) -> "ObjectTypeStr":
         """Return the type of the config object."""
         return self.obj.__class__.__name__
+
+    def set_path(self, path: str | Path) -> None:
+        """Set the path."""
+        if path != self.path:
+            self.unlock()
+        self.path = path
 
     def lock(self) -> None:
         """Lock the original path so that it can not be overwritten."""
