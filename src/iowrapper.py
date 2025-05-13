@@ -104,15 +104,17 @@ class ConfigIOWrapper(ConfigSaver):
 
     def __enter__(self) -> Self:
         if self.path is None:
-            raise TypeError("no default file path, please run 'self.set_path()' first")
+            raise TypeError("no default file path, please run self.set_path() first")
         if not self.__overwrite_ok:
             raise TypeError(
                 "overwriting the original path is not allowed, please run "
-                "'self.unlock()' first"
+                "self.unlock() first"
             )
+        self.lock()
         return self
 
     def __exit__(self, *args) -> None:
+        self.unlock()
         self.save()
 
     def __repr__(self) -> str:
@@ -219,12 +221,12 @@ class ConfigIOWrapper(ConfigSaver):
             if self.path is None:
                 raise ValueError(
                     "no default file path, please specify the path or run "
-                    "'self.set_path()' first"
+                    "self.set_path() first"
                 )
             if not self.__overwrite_ok:
                 raise TypeError(
                     "overwriting the original path is not allowed, please run "
-                    "'self.unlock()' first"
+                    "self.unlock() first"
                 )
             path = self.path
         if fileformat is None:
@@ -252,8 +254,11 @@ class ConfigIOWrapper(ConfigSaver):
 
     def set_path(self, path: str | Path) -> None:
         """Set the path."""
-        if path != self.path:
-            self.unlock()
+        if not self.__overwrite_ok:
+            raise TypeError(
+                "set_path() is not allowed when the instance is locked, "
+                "please run self.unlock() first"
+            )
         self.path = path
 
     def lock(self) -> None:
