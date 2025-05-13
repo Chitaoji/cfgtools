@@ -88,6 +88,7 @@ class ConfigIOWrapper(ConfigSaver):
     ) -> None:
         self.obj = obj
         self.fileformat = fileformat
+        self.__overwrite_ok = True
         if path is None:
             self.path = None
         else:
@@ -106,6 +107,11 @@ class ConfigIOWrapper(ConfigSaver):
             raise TypeError(
                 "failed to access method '.__enter__()' because the config "
                 "object was not read from a file"
+            )
+        if not self.__overwrite_ok:
+            raise TypeError(
+                "overwriting the original path is not allowed, please run "
+                "'self.unlock()' first"
             )
         return self
 
@@ -217,6 +223,11 @@ class ConfigIOWrapper(ConfigSaver):
                 raise ValueError(
                     "failed to save the config because no path is specified"
                 )
+            if not self.__overwrite_ok:
+                raise TypeError(
+                    "overwriting the original path is not allowed, please run "
+                    "'self.unlock()' first"
+                )
             path = self.path
         if fileformat is None:
             if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
@@ -240,6 +251,14 @@ class ConfigIOWrapper(ConfigSaver):
     def type(self) -> "ObjectTypeStr":
         """Return the type of the config object."""
         return self.obj.__class__.__name__
+
+    def lock(self) -> None:
+        """Lock the original path so that it can not be overwritten."""
+        self.__overwrite_ok = False
+
+    def unlock(self) -> None:
+        """Unlock the original path so that it can be overwritten."""
+        self.__overwrite_ok = True
 
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"
