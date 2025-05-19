@@ -245,7 +245,7 @@ class ConfigIOWrapper(ConfigSaver):
         return self.obj
 
     def to_html(self) -> HTMLTreeMaker:
-        """Return an HTML text for representing self."""
+        """Return an HTMLTreeMaker object for representing self."""
         return HTMLTreeMaker(repr(self.obj))
 
     def type(self) -> "ObjectTypeStr":
