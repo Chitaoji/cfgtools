@@ -9,6 +9,7 @@ REQUIRES_PYTHON: ">=3.12.7"
 REQUIRES: 
   - pyyaml
   - lazyr
+  - Faker
 EXTRAS: {}
 SOURCE: src
 SUBMODULES: []
