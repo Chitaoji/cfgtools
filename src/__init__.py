@@ -40,15 +40,16 @@ import lazyr
 
 lazyr.VERBOSE = 0
 lazyr.register("yaml")
+lazyr.register(".test_case", __name__)
 
 # pylint: disable=wrong-import-position
-from . import core, iowrapper, reader
+from . import core, iowrapper, reader, test_case
 from .__version__ import __version__
 from .core import *
 from .iowrapper import *
 from .reader import *
 
-__all__: list[str] = []
+__all__: list[str] = ["test_case"]
 __all__.extend(core.__all__)
 __all__.extend(reader.__all__)
 __all__.extend(iowrapper.__all__)
