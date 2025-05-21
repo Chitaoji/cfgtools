@@ -344,6 +344,8 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         return {k: v.to_object() for k, v in self.obj.items()}
 
     def to_html(self) -> HTMLTreeMaker:
+        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+            return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
         for k, v in self.obj.items():
             node = v.to_html()
@@ -420,6 +422,8 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         return [x.to_object() for x in self.obj]
 
     def to_html(self) -> HTMLTreeMaker:
+        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+            return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
         for x in self.obj:
             node = x.to_html()
