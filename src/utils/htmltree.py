@@ -125,3 +125,17 @@ class HTMLTreeMaker:
             f'</summary>\n<ul class="{self.__cls}">\n{children_str}\n</ul>\n'
             "</details></li>"
         )
+
+    def show(self, clsname: str | None = None, style: str | None = None) -> "HTMLRepr":
+        """Show the html tree."""
+        return HTMLRepr(self.make(clsname, style))
+
+
+class HTMLRepr:
+    """Represent an html object."""
+
+    def __init__(self, html_str: str) -> None:
+        self.html_str = html_str
+
+    def _repr_html_(self) -> str:
+        return self.html_str
