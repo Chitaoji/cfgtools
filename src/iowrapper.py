@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Self
 
@@ -123,7 +124,7 @@ class ConfigIOWrapper(ConfigSaver):
             f"| encoding: {self.encoding!r}"
         )
         divide_line = "-" * len(info)
-        if len(flat := repr(self.to_object())) <= MAX_LINE_WIDTH:
+        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
             reprs = flat
         else:
             reprs = self.repr()
@@ -269,6 +270,10 @@ class ConfigIOWrapper(ConfigSaver):
         """Unlock the original path so that it can be overwritten."""
         self.overwrite_ok = True
 
+    def get_max_line_width(self) -> int:
+        """Get the module variable `MAX_LINE_WIDTH`."""
+        return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
+
     def __obj_desc(self) -> str:
         return f"the config object of type {self.type()!r}"
 
@@ -306,18 +311,19 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         seps = _sep(level + 1)
         string = "{\n"
         lines: list[str] = []
+        max_line_width = self.get_max_line_width()
         for k, v in self.obj.items():
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
             _flat = repr(v.to_object())
-            if lines and (len(_head) + len(_key) + len(_flat) + 2 <= MAX_LINE_WIDTH):
+            if lines and (len(_head) + len(_key) + len(_flat) + 2 <= max_line_width):
                 lines[-1] += " " + _key + _flat + ","
-            elif len(seps) + len(_key) + len(_flat) < MAX_LINE_WIDTH:
+            elif len(seps) + len(_key) + len(_flat) < max_line_width:
                 lines.append(seps + _key + _flat + ",")
             else:
                 _child = v.repr(level + 1)
                 if lines and (
-                    len(_head) + len(_key) + len(_child) + 2 <= MAX_LINE_WIDTH
+                    len(_head) + len(_key) + len(_child) + 2 <= max_line_width
                 ):
                     lines[-1] += " " + _key + _child + ","
                 else:
@@ -375,16 +381,17 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         seps = _sep(level + 1)
         string = "[\n"
         lines: list[str] = []
+        max_line_width = self.get_max_line_width()
         for x in self.obj:
             _head = lines[-1] if lines else ""
             _flat = repr(x.to_object())
-            if lines and (len(_head) + len(_flat) + 2 <= MAX_LINE_WIDTH):
+            if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
                 lines[-1] += " " + _flat + ","
-            elif len(_head) + len(_flat) < MAX_LINE_WIDTH:
+            elif len(_head) + len(_flat) < max_line_width:
                 lines.append(seps + _flat + ",")
             else:
                 _child = x.repr(level + 1)
-                if lines and (len(_head) + len(_child) + 2 <= MAX_LINE_WIDTH):
+                if lines and (len(_head) + len(_child) + 2 <= max_line_width):
                     lines[-1] += " " + _child + ","
                 else:
                     lines.append(seps + _child + ",")
