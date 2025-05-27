@@ -125,10 +125,10 @@ class ConfigIOWrapper(ConfigSaver):
         )
         divide_line = "-" * len(info)
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
-            reprs = flat
+            r = flat
         else:
-            reprs = self.repr()
-        return f"{reprs}\n{divide_line}\n{info}\n{divide_line}"
+            r = self.repr()
+        return f"{r}\n{divide_line}\n{info}\n{divide_line}"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         maker = self.to_html()
@@ -147,7 +147,11 @@ class ConfigIOWrapper(ConfigSaver):
         return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
-        return f"config({self.obj!r})"
+        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+            s = flat
+        else:
+            s = self.repr()
+        return f"cfgtools.config({s})"
 
     def repr(self, level: int = 0, /) -> str:
         """
@@ -165,7 +169,7 @@ class ConfigIOWrapper(ConfigSaver):
 
         """
         _ = level
-        return f"{self.obj!r}"
+        return repr(self.obj)
 
     def keys(self) -> "Iterable[DataObject]":
         """Provide a view of the config object's keys if it's a dict."""
@@ -302,11 +306,6 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
                 __value, self.fileformat, encoding=self.encoding
             )
 
-    def __str__(self) -> str:
-        return (
-            "config({" + ", ".join({f"{k!r}: {str(v)}" for k, v in self.items()}) + "})"
-        )
-
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
         string = "{\n"
@@ -372,9 +371,6 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                     ConfigIOWrapper(x, self.fileformat, encoding=self.encoding)
                 )
         self.obj = new_obj
-
-    def __str__(self) -> str:
-        return "config([" + ", ".join([str(x) for x in self.obj]) + "])"
 
     def __getitem__(self, __key: int) -> Self:
         return self.obj[__key]
