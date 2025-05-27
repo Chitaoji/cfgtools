@@ -67,6 +67,8 @@ class ConfigIOWrapper(ConfigSaver):
     """
 
     def __new__(cls, obj: "ConfigObject", *args, **kwargs) -> Self:
+        if isinstance(obj, ConfigIOWrapper):
+            return obj
         if isinstance(obj, dict):
             new_class = _DictConfigIOWrapper
         elif isinstance(obj, list):
@@ -87,7 +89,9 @@ class ConfigIOWrapper(ConfigSaver):
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
-        self.obj = obj
+        if isinstance(obj, ConfigIOWrapper):
+            return
+        self.__obj = obj
         self.fileformat = fileformat
         self.overwrite_ok = True
         if path is None:
@@ -169,7 +173,7 @@ class ConfigIOWrapper(ConfigSaver):
 
         """
         _ = level
-        return repr(self.obj)
+        return repr(self.__obj)
 
     def keys(self) -> "Iterable[DataObject]":
         """Provide a view of the config object's keys if it's a dict."""
@@ -247,15 +251,15 @@ class ConfigIOWrapper(ConfigSaver):
 
     def to_object(self) -> "ConfigObject":
         """Returns the config object without any wrapper."""
-        return self.obj
+        return self.__obj
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
-        return HTMLTreeMaker(repr(self.obj))
+        return HTMLTreeMaker(repr(self.__obj))
 
     def type(self) -> "ObjectTypeStr":
         """Return the type of the config object."""
-        return self.obj.__class__.__name__
+        return self.__obj.__class__.__name__
 
     def set_path(self, path: str | Path) -> None:
         """Set the path."""
@@ -286,23 +290,23 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
     def __init__(self, obj: "ConfigObject", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
         new_obj: dict["DataObject", "ConfigObject"] = {}
-        for k, v in self.obj.items():
+        for k, v in obj.items():
             if k is not None and not isinstance(k, (bool, int, float, str, bytes)):
                 raise TypeError(f"invalid type of dict key: {k.__class__.__name__!r}")
             if isinstance(v, ConfigIOWrapper):
                 new_obj[k] = v
             else:
                 new_obj[k] = ConfigIOWrapper(v, self.fileformat, encoding=self.encoding)
-        self.obj = new_obj
+        self.__obj = new_obj
 
     def __getitem__(self, __key: "DataObject") -> Self:
-        return self.obj[__key]
+        return self.__obj[__key]
 
     def __setitem__(self, __key: "DataObject", __value: "ConfigObject") -> None:
         if isinstance(__value, ConfigIOWrapper):
-            self.obj[__key] = __value
+            self.__obj[__key] = __value
         else:
-            self.obj[__key] = ConfigIOWrapper(
+            self.__obj[__key] = ConfigIOWrapper(
                 __value, self.fileformat, encoding=self.encoding
             )
 
@@ -311,7 +315,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         string = "{\n"
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
-        for k, v in self.obj.items():
+        for k, v in self.__obj.items():
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
             _flat = repr(v.to_object())
@@ -331,22 +335,22 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         return string
 
     def keys(self) -> Iterable["DataObject"]:
-        return self.obj.keys()
+        return self.__obj.keys()
 
     def values(self) -> Iterable["ConfigObject"]:
-        return self.obj.values()
+        return self.__obj.values()
 
     def items(self) -> Iterable[tuple["DataObject", "ConfigObject"]]:
-        return self.obj.items()
+        return self.__obj.items()
 
     def to_object(self) -> "ConfigObject":
-        return {k: v.to_object() for k, v in self.obj.items()}
+        return {k: v.to_object() for k, v in self.__obj.items()}
 
     def to_html(self) -> HTMLTreeMaker:
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
-        for k, v in self.obj.items():
+        for k, v in self.__obj.items():
             node = v.to_html()
             if node.has_child():
                 node.setval(f"{k!r}: {node.getval()}")
@@ -363,24 +367,24 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
     def __init__(self, obj: "ConfigObject", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
         new_obj: list["ConfigObject"] = []
-        for x in self.obj:
+        for x in obj:
             if isinstance(x, ConfigIOWrapper):
                 new_obj.append(x)
             else:
                 new_obj.append(
                     ConfigIOWrapper(x, self.fileformat, encoding=self.encoding)
                 )
-        self.obj = new_obj
+        self.__obj = new_obj
 
     def __getitem__(self, __key: int) -> Self:
-        return self.obj[__key]
+        return self.__obj[__key]
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
         string = "[\n"
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
-        for x in self.obj:
+        for x in self.__obj:
             _head = lines[-1] if lines else ""
             _flat = repr(x.to_object())
             if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
@@ -398,30 +402,32 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
     def append(self, __object: "ConfigObject") -> None:
         if isinstance(__object, ConfigIOWrapper):
-            self.obj.append(__object)
+            self.__obj.append(__object)
         else:
-            self.obj.append(
+            self.__obj.append(
                 ConfigIOWrapper(__object, self.fileformat, encoding=self.encoding)
             )
 
     def extend(self, __iterable: Iterable["ConfigObject"]) -> None:
         if isinstance(__iterable, _ListConfigIOWrapper):
-            self.obj.extend(__iterable.obj)
+            self.__obj.extend(list(__iterable))
         else:
-            self.obj.extend(
-                ConfigIOWrapper(
-                    list(__iterable), self.fileformat, encoding=self.encoding
-                ).obj
+            self.__obj.extend(
+                list(
+                    ConfigIOWrapper(
+                        list(__iterable), self.fileformat, encoding=self.encoding
+                    )
+                )
             )
 
     def to_object(self) -> "ConfigObject":
-        return [x.to_object() for x in self.obj]
+        return [x.to_object() for x in self.__obj]
 
     def to_html(self) -> HTMLTreeMaker:
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
-        for x in self.obj:
+        for x in self.__obj:
             node = x.to_html()
             if node.has_child():
                 node.setval(f"{node.getval()}")
