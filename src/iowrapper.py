@@ -123,16 +123,11 @@ class ConfigIOWrapper(ConfigSaver):
         self.save()
 
     def __repr__(self) -> str:
-        info = (
-            f"format: {self.fileformat!r} | path: {self.path!r} "
-            f"| encoding: {self.encoding!r}"
-        )
-        divide_line = "-" * len(info)
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
-            r = flat
+            s = flat
         else:
-            r = self.repr()
-        return f"{r}\n{divide_line}\n{info}\n{divide_line}"
+            s = self.repr()
+        return f"cfgtools.config({s})"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         maker = self.to_html()
@@ -151,11 +146,16 @@ class ConfigIOWrapper(ConfigSaver):
         return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
+        info = (
+            f"format: {self.fileformat!r} | path: {self.path!r} "
+            f"| encoding: {self.encoding!r}"
+        )
+        divide_line = "-" * len(info)
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
-            s = flat
+            r = flat
         else:
-            s = self.repr()
-        return f"cfgtools.config({s})"
+            r = self.repr()
+        return f"{r}\n{divide_line}\n{info}\n{divide_line}"
 
     def repr(self, level: int = 0, /) -> str:
         """
