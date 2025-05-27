@@ -1,8 +1,7 @@
 """
 Contains typing classes.
 
-NOTE: this module is private. All functions and objects are available in the main
-`cfgtools` namespace - use that instead.
+NOTE: this module is not intended to be directly imported.
 
 """
 
@@ -11,9 +10,10 @@ from typing import Literal
 
 from .iowrapper import ConfigIOWrapper
 
-logging.warning(
-    "importing from '._typing' - this module is not intended for direct import, "
-    "therefore unexpected errors may occur"
+logging.getLogger(__name__).warning(
+    "importing from '%s' - this module is not intended to be directly imported, "
+    "therefore unexpected errors may occur",
+    __name__,
 )
 
 DataObject = bool | int | float | str | bytes | None
