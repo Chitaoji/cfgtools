@@ -10,6 +10,7 @@ $ pip install cfgtools
 ```txt
 pyyaml
 lazyr
+Faker
 ```
 
 ## Usage

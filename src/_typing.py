@@ -1,20 +1,17 @@
 """
 Contains typing classes.
 
-NOTE: this module is not intended to be directly imported.
+NOTE: this module is not intended to be imported at runtime.
 
 """
 
-import logging
 from typing import Literal
+
+import loggerlib
 
 from .iowrapper import ConfigIOWrapper
 
-logging.getLogger(__name__).warning(
-    "importing from '%s' - this module is not intended to be directly imported, "
-    "therefore unexpected errors may occur",
-    __name__,
-)
+loggerlib.warning("this module is not intended to be imported at runtime")
 
 DataObject = bool | int | float | str | bytes | None
 ConfigObject = (
