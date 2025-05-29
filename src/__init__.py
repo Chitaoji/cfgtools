@@ -9,12 +9,10 @@ Provides tools for managing config files.
 >>> from cfgtools import config
 >>> config({"a": {"b": "c"}}).save("test.yaml")
 ```
+If not specifeid, the format of the file is automatically detected according to the file
+suffix. Valid formats include `ini`, `json`, `yaml`, `pickle`, etc.
 
 ### Read from a config file
-Use `read_config()` to read from a config file in any valid format. The valid formats
-are `ini`, `json`, `yaml`, `pickle`, etc. The `encoding` of the file is automatically
-detected if not specified.
-
 ```py
 >>> from cfgtools import read_config
 >>> read_config("test.yaml")
@@ -23,6 +21,7 @@ detected if not specified.
 format: 'yaml' | path: 'test.yaml' | encoding: 'utf-8'
 ------------------------------------------------------
 ```
+The encoding and format of the file is automatically detected if not specified.
 
 ## See Also
 ### Github repository
@@ -40,7 +39,7 @@ import lazyr
 
 lazyr.VERBOSE = 0
 lazyr.register("yaml")
-lazyr.register(".test_case", __name__)
+lazyr.register(".test_case")
 
 # pylint: disable=wrong-import-position
 from . import core, iowrapper, reader, test_case
