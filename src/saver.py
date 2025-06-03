@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Callable
 import yaml
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, ConfigObject
+    from ._typing import ConfigFileFormat, UnwrappedConfigObject
 
 
 __all__ = []
@@ -25,7 +25,7 @@ __all__ = []
 class ConfigSaver:
     """Config saver."""
 
-    def to_object(self) -> "ConfigObject":
+    def to_object(self) -> "UnwrappedConfigObject":
         """Returns the config object without any wrapper."""
         return NotImplemented
 

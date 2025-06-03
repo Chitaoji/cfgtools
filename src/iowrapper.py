@@ -15,7 +15,13 @@ from .saver import ConfigSaver
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, ConfigObject, DataObject, ObjectTypeStr
+    from ._typing import (
+        ConfigFileFormat,
+        ConfigObject,
+        DataObject,
+        ObjectTypeStr,
+        UnwrappedConfigObject,
+    )
 
 __all__ = ["FileFormatError", "MAX_LINE_WIDTH"]
 
@@ -50,7 +56,7 @@ class ConfigIOWrapper(ConfigSaver):
     Parameters
     ----------
     obj : ConfigObject
-        Config object.
+        The object to be wrapped.
     fileformat : ConfigFileFormat, optional
         File format, by default None.
     path : str | Path | None, optional
@@ -62,7 +68,7 @@ class ConfigIOWrapper(ConfigSaver):
     Raises
     ------
     TypeError
-        Raised when the type of config object is invalid.
+        Raised if the type of the config-object is invalid.
 
     """
 
@@ -77,7 +83,7 @@ class ConfigIOWrapper(ConfigSaver):
             new_class = ConfigIOWrapper
         else:
             raise TypeError(
-                f"invalid type of config object: {obj.__class__.__name__!r}"
+                f"invalid type of config-object: {obj.__class__.__name__!r}"
             )
         return super().__new__(new_class)
 
@@ -176,24 +182,27 @@ class ConfigIOWrapper(ConfigSaver):
         return repr(self.__obj)
 
     def keys(self) -> "Iterable[DataObject]":
-        """Provide a view of the config object's keys if it's a dict."""
+        """If the unwrapped config-object is a dict, provide a view of its keys."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'keys'")
 
     def values(self) -> "Iterable[ConfigObject]":
-        """Provide a view of the config object's values if it's a dict."""
+        """If the unwrapped config-object is a dict, provide a view of its values."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'values'")
 
     def items(self) -> "Iterable[tuple[DataObject, ConfigObject]]":
-        """Provide a view of the config object's items if it's a dict."""
+        """If the unwrapped config-object is a dict, provide a view of its items."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'items'")
 
     def append(self, __object: "ConfigObject") -> None:
-        """Append object to the end of the config object if it's a list."""
+        """If the unwrapped config-object is a list, append to its end."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'append'")
 
     def extend(self, __object: "Iterable[ConfigObject]") -> None:
-        """Extend the config object if it's a list."""
+        """If the unwrapped config-object is a list, extend it."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'extend'")
+
+    def form(self, template: "ConfigObject", /) -> Self:
+        """Form into the template."""
 
     def save(
         self,
@@ -221,9 +230,11 @@ class ConfigIOWrapper(ConfigSaver):
         Raises
         ------
         ValueError
-            Raised when both path and `self.path` are None.
+            Raised if both `path` and `self.path` are None.
+        TypeError
+            Raised if `self.overwrite_ok` is False.
         FileFormatError
-            Raised when the config file format is not supported.
+            Raised if the file format is not supported.
 
         """
         if path is None:
@@ -249,24 +260,24 @@ class ConfigIOWrapper(ConfigSaver):
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
-    def to_object(self) -> "ConfigObject":
-        """Returns the config object without any wrapper."""
+    def to_object(self) -> "UnwrappedConfigObject":
+        """Returns the unwrapped config-object."""
         return self.__obj
 
-    def to_dict(self) -> dict:
-        """Returns the config object without any wrapper if it's a dict."""
-        raise TypeError(f"{self.__obj_desc()} can not be converted into a dict")
+    def to_dict(self) -> dict[str, "UnwrappedConfigObject"]:
+        """Returns the unwrapped config-object if it's a dict."""
+        raise TypeError(f"{self.__obj_desc()} can't be converted into a dict")
 
-    def to_list(self) -> list:
-        """Returns the config object without any wrapper if it's a list."""
-        raise TypeError(f"{self.__obj_desc()} can not be converted into a list")
+    def to_list(self) -> list["UnwrappedConfigObject"]:
+        """Returns the unwrapped config-object if it's a list."""
+        raise TypeError(f"{self.__obj_desc()} can't be converted into a list")
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
         return HTMLTreeMaker(repr(self.__obj))
 
     def type(self) -> "ObjectTypeStr":
-        """Return the type of the config object."""
+        """Return the type of the unwrapped config-object."""
         return self.__obj.__class__.__name__
 
     def set_path(self, path: str | Path) -> None:
@@ -291,7 +302,7 @@ class ConfigIOWrapper(ConfigSaver):
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
     def __obj_desc(self) -> str:
-        return f"the config object of type {self.type()!r}"
+        return f"the config-object of type {self.type()!r}"
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):
@@ -351,10 +362,10 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
     def items(self) -> Iterable[tuple["DataObject", "ConfigObject"]]:
         return self.__obj.items()
 
-    def to_object(self) -> "ConfigObject":
+    def to_object(self) -> "UnwrappedConfigObject":
         return {k: v.to_object() for k, v in self.__obj.items()}
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, "UnwrappedConfigObject"]:
         return self.to_object()
 
     def to_html(self) -> HTMLTreeMaker:
@@ -431,10 +442,10 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                 )
             )
 
-    def to_object(self) -> "ConfigObject":
+    def to_object(self) -> "UnwrappedConfigObject":
         return [x.to_object() for x in self.__obj]
 
-    def to_list(self) -> dict:
+    def to_list(self) -> list["UnwrappedConfigObject"]:
         return self.to_object()
 
     def to_html(self) -> HTMLTreeMaker:
@@ -459,4 +470,4 @@ def _sep(level: int) -> str:
 
 
 class FileFormatError(Exception):
-    """Raised when the file format is not supported."""
+    """Raised if the file format is not supported."""
