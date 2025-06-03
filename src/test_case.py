@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from ._typing import ConfigIOWrapper
 
 
-__all__ = ["ip_location", "customer_data"]
+__all__ = ["ip_locations", "customer_data"]
 
 
-def ip_location(
+def ip_locations(
     number_of_addresses: int = 20, seed: int | None = None
 ) -> "ConfigIOWrapper":
     """
