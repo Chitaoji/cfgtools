@@ -7,11 +7,11 @@ NOTE: this module is not intended to be imported at runtime.
 
 from typing import Literal
 
-import loggerlib
+import loggings
 
 from .iowrapper import ConfigIOWrapper
 
-loggerlib.warning("this module is not intended to be imported at runtime")
+loggings.warning("this module is not intended to be imported at runtime")
 
 DataObject = bool | int | float | str | bytes | None
 ConfigObject = (
