@@ -45,8 +45,9 @@ def customer_data(
     number_of_customers: int = 20, seed: int | None = None
 ) -> "ConfigIOWrapper":
     """
-    Returns a fake book of customers, including names, emails, phone
-    numbers, addresses, and order records of the customers.
+    Returns a fake mapping of customers' names to their infomation,
+    including their names, emails, phone, numbers, addresses, and order
+    records.
 
     Parameters
     ----------

@@ -13,7 +13,7 @@ from .iowrapper import ConfigIOWrapper
 from .reader import ConfigReader
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, UnwrappedConfigObject
+    from ._typing import ConfigFileFormat, UnwrappedConfigObj
 
 __all__ = ["read", "config"]
 
@@ -56,7 +56,7 @@ def read(
     return wrapper
 
 
-def config(obj: "UnwrappedConfigObject" = None, /) -> ConfigIOWrapper:
+def config(obj: "UnwrappedConfigObj" = None, /) -> ConfigIOWrapper:
     """
     Initialize a new config object.
 
