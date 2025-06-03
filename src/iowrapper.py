@@ -51,8 +51,8 @@ class ConfigIOWrapper(ConfigSaver):
     ----------
     obj : ConfigObject
         Config object.
-    fileformat : ConfigFileFormat
-        File format.
+    fileformat : ConfigFileFormat, optional
+        File format, by default None.
     path : str | Path | None, optional
         File path, by default None.
     encoding : str | None, optional
@@ -84,7 +84,7 @@ class ConfigIOWrapper(ConfigSaver):
     def __init__(
         self,
         obj: "ConfigObject",
-        fileformat: "ConfigFileFormat",
+        fileformat: "ConfigFileFormat | None" = None,
         /,
         path: str | Path | None = None,
         encoding: str | None = None,
@@ -242,7 +242,7 @@ class ConfigIOWrapper(ConfigSaver):
             if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
                 fileformat = SUFFIX_MAPPING[suffix]
             else:
-                fileformat = self.fileformat
+                fileformat = "json" if self.fileformat is None else self.fileformat
         encoding = self.encoding if encoding is None else encoding
         if fileformat in FORMAT_MAPPING:
             super().save(path, FORMAT_MAPPING[fileformat], encoding=encoding)

@@ -71,4 +71,4 @@ def config(obj: "ConfigObject" = None, /) -> ConfigIOWrapper:
         A wrapper for reading and writing config files.
 
     """
-    return ConfigIOWrapper(obj, "json")
+    return ConfigIOWrapper(obj)

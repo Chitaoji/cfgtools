@@ -30,7 +30,7 @@ If not specifeid, the format of the file is automatically detected according to 
 ### Read from a config file
 ```py
 >>> cfgtools.read("test.cfg")
-{
+cfgtools.config({
     '38.113.227.125': [
         'Changchester', '4759 William Haven Apt. 194', 'West Corey, CA 90152',
     ],
@@ -38,10 +38,7 @@ If not specifeid, the format of the file is automatically detected according to 
     '85.75.200.206': [
         'Claytonmouth', '139 John Divide Suite 115', 'Rodriguezside, LA 93111',
     ],
-}
------------------------------------------------------
-format: 'yaml' | path: 'test.cfg' | encoding: 'utf-8'
------------------------------------------------------
+})
 ```
 The encoding and format of the file is automatically detected if not specified.
 
