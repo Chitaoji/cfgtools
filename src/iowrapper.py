@@ -253,6 +253,14 @@ class ConfigIOWrapper(ConfigSaver):
         """Returns the config object without any wrapper."""
         return self.__obj
 
+    def to_dict(self) -> dict:
+        """Returns the config object without any wrapper if it's a dict."""
+        raise TypeError(f"{self.__obj_desc()} can not be converted into a dict")
+
+    def to_list(self) -> list:
+        """Returns the config object without any wrapper if it's a list."""
+        raise TypeError(f"{self.__obj_desc()} can not be converted into a list")
+
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
         return HTMLTreeMaker(repr(self.__obj))
@@ -346,6 +354,9 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
     def to_object(self) -> "ConfigObject":
         return {k: v.to_object() for k, v in self.__obj.items()}
 
+    def to_dict(self) -> dict:
+        return self.to_object()
+
     def to_html(self) -> HTMLTreeMaker:
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
@@ -422,6 +433,9 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
     def to_object(self) -> "ConfigObject":
         return [x.to_object() for x in self.__obj]
+
+    def to_list(self) -> dict:
+        return self.to_object()
 
     def to_html(self) -> HTMLTreeMaker:
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
