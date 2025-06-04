@@ -9,7 +9,7 @@ from typing import Callable, Literal
 
 import loggings
 
-from .iowrapper import ConfigIOWrapper
+from .iowrapper import ConfigIOWrapper, ConfigTemplate
 
 loggings.warning("this module is not intended to be imported at runtime")
 
@@ -19,7 +19,7 @@ UnwrappedConfigObj = (
     dict[DataObj, "UnwrappedConfigObj"] | list["UnwrappedConfigObj"] | DataObj
 )
 ConfigObj = dict[DataObj, "ConfigObj"] | list["ConfigObj"] | DataObj | ConfigIOWrapper
-ConfigTpl = dict[DataTpl, "ConfigTpl"] | list["ConfigTpl"] | DataTpl | ConfigIOWrapper
+ConfigTpl = dict[DataTpl, "ConfigTpl"] | list["ConfigTpl"] | DataTpl | ConfigTemplate
 ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
 ]

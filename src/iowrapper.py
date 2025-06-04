@@ -8,7 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Self
+from typing import TYPE_CHECKING, Callable, Iterable, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
@@ -18,12 +18,15 @@ if TYPE_CHECKING:
     from ._typing import (
         ConfigFileFormat,
         ConfigObj,
+        ConfigTpl,
         DataObj,
         UnwrappedConfigObj,
         UnwrappedConfigTypeStr,
     )
+NoneType = type(None)
 
 __all__ = ["FileFormatError", "MAX_LINE_WIDTH"]
+
 
 SUFFIX_MAPPING = {
     ".yaml": "yaml",
@@ -72,20 +75,23 @@ class ConfigIOWrapper(ConfigSaver):
 
     """
 
+    valid_types = (str, int, float, bool, NoneType)
+    constructor = object
+
     def __new__(cls, obj: "ConfigObj", *args, **kwargs) -> Self:
-        if isinstance(obj, ConfigIOWrapper):
+        if isinstance(obj, cls):
             return obj
         if isinstance(obj, dict):
             new_class = _DictConfigIOWrapper
         elif isinstance(obj, list):
             new_class = _ListConfigIOWrapper
-        elif obj is None or isinstance(obj, (str, int, float, bool)):
-            new_class = ConfigIOWrapper
+        elif isinstance(obj, cls.valid_types):
+            new_class = cls
         else:
             raise TypeError(
-                f"config object of type {obj.__class__.__name__} is not supported"
+                f"config object of type {obj.__class__.__name__} is not allowed"
             )
-        return super().__new__(new_class)
+        return cls.constructor.__new__(new_class)
 
     def __init__(
         self,
@@ -95,7 +101,7 @@ class ConfigIOWrapper(ConfigSaver):
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
-        if isinstance(obj, ConfigIOWrapper):
+        if isinstance(obj, self.__class__):
             return
         self.__obj = obj
         self.fileformat = fileformat
@@ -108,10 +114,10 @@ class ConfigIOWrapper(ConfigSaver):
         self.encoding = encoding
 
     def __getitem__(self, __key: "DataObj") -> Self:
-        raise TypeError(f"{self.__obj_desc()} is not subscriptable")
+        raise TypeError(f"{self._desc()} is not subscriptable")
 
     def __setitem__(self, __key: "DataObj", __value: "ConfigObj") -> None:
-        raise TypeError(f"{self.__obj_desc()} does not support item assignment")
+        raise TypeError(f"{self._desc()} does not support item assignment")
 
     def __enter__(self) -> Self:
         if self.path is None:
@@ -183,25 +189,25 @@ class ConfigIOWrapper(ConfigSaver):
 
     def keys(self) -> "Iterable[DataObj]":
         """If the unwrapped config object is a dict, provide a view of its keys."""
-        raise TypeError(f"{self.__obj_desc()} has no attribute 'keys'")
+        raise TypeError(f"{self._desc()} has no method keys()")
 
     def values(self) -> "Iterable[ConfigObj]":
         """If the unwrapped config object is a dict, provide a view of its values."""
-        raise TypeError(f"{self.__obj_desc()} has no attribute 'values'")
+        raise TypeError(f"{self._desc()} has no method 'values()'")
 
     def items(self) -> "Iterable[tuple[DataObj, ConfigObj]]":
         """If the unwrapped config object is a dict, provide a view of its items."""
-        raise TypeError(f"{self.__obj_desc()} has no attribute 'items'")
+        raise TypeError(f"{self._desc()} has no method 'items()'")
 
     def append(self, __object: "ConfigObj") -> None:
         """If the unwrapped config object is a list, append to its end."""
-        raise TypeError(f"{self.__obj_desc()} has no attribute 'append'")
+        raise TypeError(f"{self._desc()} has no method 'append()'")
 
     def extend(self, __object: "Iterable[ConfigObj]") -> None:
         """If the unwrapped config object is a list, extend it."""
-        raise TypeError(f"{self.__obj_desc()} has no attribute 'extend'")
+        raise TypeError(f"{self._desc()} has no method 'extend()'")
 
-    def match(self, template: "ConfigObj", /) -> Self:
+    def match(self, template: "ConfigTpl", /) -> Self:
         """Match the template from the top level."""
 
     def save(
@@ -266,11 +272,11 @@ class ConfigIOWrapper(ConfigSaver):
 
     def to_dict(self) -> dict["DataObj", "UnwrappedConfigObj"]:
         """Returns the unwrapped config object if it's a dict."""
-        raise TypeError(f"{self.__obj_desc()} can't be converted into a dict")
+        raise TypeError(f"{self._desc()} can't be converted into a dict")
 
     def to_list(self) -> list["UnwrappedConfigObj"]:
         """Returns the unwrapped config object if it's a list."""
-        raise TypeError(f"{self.__obj_desc()} can't be converted into a list")
+        raise TypeError(f"{self._desc()} can't be converted into a list")
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
@@ -301,34 +307,35 @@ class ConfigIOWrapper(ConfigSaver):
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
-    def __obj_desc(self) -> str:
-        return f"the config object of type {self.type()!r}"
+    def _desc(self) -> str:
+        return f"config object of type {self.type()}"
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):
+    constructor = ConfigIOWrapper
+
     def __init__(self, obj: "ConfigObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
         new_obj: dict["DataObj", "ConfigObj"] = {}
         for k, v in obj.items():
-            if k is not None and not isinstance(k, (str, int, float, bool)):
-                raise TypeError(
-                    "keys must be str, int, float, bool or None, not "
-                    + k.__class__.__name__
-                )
-            if isinstance(v, ConfigIOWrapper):
+            if not isinstance(k, self.valid_types):
+                raise TypeError(f"key of type {k.__class__.__name__} is not allowed")
+            if isinstance(v, self.constructor):
                 new_obj[k] = v
             else:
-                new_obj[k] = ConfigIOWrapper(v, self.fileformat, encoding=self.encoding)
+                new_obj[k] = self.constructor(
+                    v, self.fileformat, encoding=self.encoding
+                )
         self.__obj = new_obj
 
     def __getitem__(self, __key: "DataObj") -> Self:
         return self.__obj[__key]
 
     def __setitem__(self, __key: "DataObj", __value: "ConfigObj") -> None:
-        if isinstance(__value, ConfigIOWrapper):
+        if isinstance(__value, self.constructor):
             self.__obj[__key] = __value
         else:
-            self.__obj[__key] = ConfigIOWrapper(
+            self.__obj[__key] = self.constructor(
                 __value, self.fileformat, encoding=self.encoding
             )
 
@@ -389,15 +396,17 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
 
 
 class _ListConfigIOWrapper(ConfigIOWrapper):
+    constructor = ConfigIOWrapper
+
     def __init__(self, obj: "ConfigObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
         new_obj: list["ConfigObj"] = []
         for x in obj:
-            if isinstance(x, ConfigIOWrapper):
+            if isinstance(x, self.constructor):
                 new_obj.append(x)
             else:
                 new_obj.append(
-                    ConfigIOWrapper(x, self.fileformat, encoding=self.encoding)
+                    self.constructor(x, self.fileformat, encoding=self.encoding)
                 )
         self.__obj = new_obj
 
@@ -426,20 +435,20 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         return string
 
     def append(self, __object: "ConfigObj") -> None:
-        if isinstance(__object, ConfigIOWrapper):
+        if isinstance(__object, self.constructor):
             self.__obj.append(__object)
         else:
             self.__obj.append(
-                ConfigIOWrapper(__object, self.fileformat, encoding=self.encoding)
+                self.constructor(__object, self.fileformat, encoding=self.encoding)
             )
 
     def extend(self, __iterable: Iterable["ConfigObj"]) -> None:
-        if isinstance(__iterable, _ListConfigIOWrapper):
+        if isinstance(__iterable, self.__class__):
             self.__obj.extend(list(__iterable))
         else:
             self.__obj.extend(
                 list(
-                    ConfigIOWrapper(
+                    self.constructor(
                         list(__iterable), self.fileformat, encoding=self.encoding
                     )
                 )
@@ -470,6 +479,31 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
 
 def _sep(level: int) -> str:
     return "    " * level
+
+
+class ConfigTemplate(ConfigIOWrapper):
+    """A wrapper for matching config objects."""
+
+    valid_types = (str, int, float, bool, NoneType, type, Callable)
+    constructor = object
+
+    def __new__(cls, obj: "ConfigObj", *args, **kwargs) -> Self:
+        if isinstance(obj, cls):
+            return obj
+        if isinstance(obj, dict):
+            new_class = _DictConfigIOWrapper
+        elif isinstance(obj, list):
+            new_class = _ListConfigIOWrapper
+        elif isinstance(obj, cls.valid_types):
+            new_class = cls
+        else:
+            raise TypeError(
+                f"config template of type {obj.__class__.__name__} is not allowed"
+            )
+        return cls.constructor.__new__(new_class)
+
+    def _desc(self) -> str:
+        return f"config template of type {self.type()}"
 
 
 class FileFormatError(Exception):
