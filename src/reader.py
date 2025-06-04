@@ -257,7 +257,7 @@ def _obj_restore(string: str) -> "UnwrappedConfigObj":
 class ConfigReader:
     """Config reader."""
 
-    reader_mapping: dict[str, Callable[..., ConfigIOWrapper | None]] = {
+    reader_mapping: dict[str, Callable[..., ConfigIOWrapper]] = {
         "pickle": read_pickle,
         "ini": read_ini,
         "json": read_json,
@@ -273,28 +273,36 @@ class ConfigReader:
         fileformat: "ConfigFileFormat | None" = None,
         /,
         encoding: str | None = None,
-    ):
+    ) -> ConfigIOWrapper:
         """Read from the config file."""
-        encoding = detect_encoding(path) if encoding is None else encoding
         if fileformat is None:
-            methods: tuple[Callable[..., ConfigIOWrapper | None]] = (
-                cls.__try_read_pickle,
-                cls.__try_read_ini,
-                cls.__try_read_json,
-                cls.__try_read_yaml,
-                cls.__try_read_config_from_text,
-                read_config_from_bytes,
-            )
-            for m in methods:
-                if (wrapper := m(path, encoding=encoding)) is not None:
-                    return wrapper
-            raise FileFormatError(f"failed to read the config file: '{path}'")
+            return cls.autoread(path, encoding=encoding)
+        encoding = detect_encoding(path) if encoding is None else encoding
         if fileformat not in FORMAT_MAPPING:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
         return cls.reader_mapping[FORMAT_MAPPING[fileformat]](path, encoding=encoding)
 
+    @classmethod
+    def autoread(
+        cls, path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper:
+        """Read from the config file, automatically detecting the fileformat."""
+        encoding = detect_encoding(path) if encoding is None else encoding
+        try_methods: tuple[Callable[..., ConfigIOWrapper | None]] = (
+            cls.__try_pickle,
+            cls.__try_ini,
+            cls.__try_json,
+            cls.__try_yaml,
+            cls.__try_config_from_text,
+            read_config_from_bytes,
+        )
+        for m in try_methods:
+            if (wrapper := m(path, encoding=encoding)) is not None:
+                return wrapper
+        raise FileFormatError(f"failed to read the config file: '{path}'")
+
     @staticmethod
-    def __try_read_pickle(
+    def __try_pickle(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         _ = encoding
@@ -304,7 +312,7 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def __try_read_ini(
+    def __try_ini(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
@@ -313,7 +321,7 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def __try_read_json(
+    def __try_json(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
@@ -322,7 +330,7 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def __try_read_yaml(
+    def __try_yaml(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
@@ -333,7 +341,7 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def __try_read_config_from_text(
+    def __try_config_from_text(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
