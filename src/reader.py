@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
 import yaml
+from yaml.scanner import ScannerError
 
 from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
 
@@ -277,26 +278,23 @@ class ConfigReader:
         encoding = detect_encoding(path) if encoding is None else encoding
         if fileformat is None:
             methods: tuple[Callable[..., ConfigIOWrapper | None]] = (
-                cls._try_read_pickle,
-                cls._try_read_ini,
-                cls._try_read_json,
-                cls._try_read_yaml,
-                cls._try_read_config_from_text,
+                cls.__try_read_pickle,
+                cls.__try_read_ini,
+                cls.__try_read_json,
+                cls.__try_read_yaml,
+                cls.__try_read_config_from_text,
                 read_config_from_bytes,
             )
             for m in methods:
                 if (wrapper := m(path, encoding=encoding)) is not None:
                     return wrapper
             raise FileFormatError(f"failed to read the config file: '{path}'")
-        else:
-            if fileformat not in FORMAT_MAPPING:
-                raise FileFormatError(f"unsupported config file format: {fileformat!r}")
-            return cls.reader_mapping[FORMAT_MAPPING[fileformat]](
-                path, encoding=encoding
-            )
+        if fileformat not in FORMAT_MAPPING:
+            raise FileFormatError(f"unsupported config file format: {fileformat!r}")
+        return cls.reader_mapping[FORMAT_MAPPING[fileformat]](path, encoding=encoding)
 
     @staticmethod
-    def _try_read_pickle(
+    def __try_read_pickle(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         _ = encoding
@@ -306,7 +304,7 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def _try_read_ini(
+    def __try_read_ini(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
@@ -315,7 +313,7 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def _try_read_json(
+    def __try_read_json(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
@@ -324,18 +322,18 @@ class ConfigReader:
             return None
 
     @staticmethod
-    def _try_read_yaml(
+    def __try_read_yaml(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
             return read_yaml(path, encoding=encoding)
         except yaml.reader.ReaderError:
             return None
-        except yaml.scanner.ScannerError:
+        except ScannerError:
             return None
 
     @staticmethod
-    def _try_read_config_from_text(
+    def __try_read_config_from_text(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
