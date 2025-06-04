@@ -157,20 +157,14 @@ class ConfigIOWrapper(ConfigSaver):
         maker.setcls("t")
         main_maker = HTMLTreeMaker()
         main_maker.add(maker)
-        main_maker.add(info, "i")
+        if not isinstance(self, ConfigTemplate):
+            main_maker.add(info, "i")
         return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
-        info = (
-            f"format: {self.fileformat!r} | path: {self.path!r} "
-            f"| encoding: {self.encoding!r}"
-        )
-        divide_line = "-" * len(info)
         if len(flat := repr(self.to_object())) <= self.get_max_line_width():
-            r = flat
-        else:
-            r = self.repr()
-        return f"{r}\n{divide_line}\n{info}\n{divide_line}"
+            return flat
+        return self.repr()
 
     def repr(self, level: int = 0, /) -> str:
         """
@@ -283,7 +277,7 @@ class ConfigIOWrapper(ConfigSaver):
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
-        return HTMLTreeMaker(repr(self.__obj))
+        return HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
 
     def type(self) -> "UnwrappedConfigTypeStr":
         """Return the type of the unwrapped config object."""
@@ -487,7 +481,7 @@ def _sep(level: int) -> str:
 
 
 class ConfigTemplate(ConfigIOWrapper):
-    """A wrapper for matching config objects."""
+    """A template for matching config objects."""
 
     valid_types = (str, int, float, bool, NoneType, type, Callable)
     constructor = object

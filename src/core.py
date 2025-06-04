@@ -9,13 +9,13 @@ NOTE: this module is private. All functions and objects are available in the mai
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .iowrapper import ConfigIOWrapper
+from .iowrapper import ConfigIOWrapper, ConfigTemplate
 from .reader import ConfigReader
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, UnwrappedConfigObj
+    from ._typing import ConfigFileFormat, ConfigObj
 
-__all__ = ["read", "config"]
+__all__ = ["read", "config", "template"]
 
 
 def read(
@@ -56,13 +56,13 @@ def read(
     return wrapper
 
 
-def config(obj: "UnwrappedConfigObj" = None, /) -> ConfigIOWrapper:
+def config(obj: "ConfigObj" = None, /) -> ConfigIOWrapper:
     """
     Initialize a new config object.
 
     Parameters
     ----------
-    obj : ConfigObject, optional
+    obj : ConfigObj, optional
         Config object, by default None.
 
     Returns
@@ -72,3 +72,21 @@ def config(obj: "UnwrappedConfigObj" = None, /) -> ConfigIOWrapper:
 
     """
     return ConfigIOWrapper(obj)
+
+
+def template(tpl: "ConfigObj", /) -> ConfigTemplate:
+    """
+    Initialize a new config template.
+
+    Parameters
+    ----------
+    tpl : ConfigObj, optional
+        Config template, by default None.
+
+    Returns
+    -------
+    ConfigTemplate
+        Template for matching config objects.
+
+    """
+    return ConfigTemplate(tpl)
