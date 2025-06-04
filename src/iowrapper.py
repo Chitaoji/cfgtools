@@ -231,10 +231,10 @@ class ConfigIOWrapper(ConfigSaver):
         ------
         ValueError
             Raised if both `path` and `self.path` are None.
-        TypeError
-            Raised if `self.overwrite_ok` is False.
         FileFormatError
             Raised if the file format is not supported.
+        TypeError
+            Raised if `self.overwrite_ok` is False.
 
         """
         if path is None:
