@@ -68,7 +68,7 @@ class ConfigIOWrapper(ConfigSaver):
     Raises
     ------
     TypeError
-        Raised if the type of the config-object is invalid.
+        Raised if the type of the config object is invalid.
 
     """
 
@@ -79,11 +79,11 @@ class ConfigIOWrapper(ConfigSaver):
             new_class = _DictConfigIOWrapper
         elif isinstance(obj, list):
             new_class = _ListConfigIOWrapper
-        elif obj is None or isinstance(obj, (bool, int, float, str, bytes)):
+        elif obj is None or isinstance(obj, (str, int, float, bool)):
             new_class = ConfigIOWrapper
         else:
             raise TypeError(
-                f"invalid type of config-object: {obj.__class__.__name__!r}"
+                f"config object of type {obj.__class__.__name__} is not supported"
             )
         return super().__new__(new_class)
 
@@ -182,27 +182,27 @@ class ConfigIOWrapper(ConfigSaver):
         return repr(self.__obj)
 
     def keys(self) -> "Iterable[DataObj]":
-        """If the unwrapped config-object is a dict, provide a view of its keys."""
+        """If the unwrapped config object is a dict, provide a view of its keys."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'keys'")
 
     def values(self) -> "Iterable[ConfigObj]":
-        """If the unwrapped config-object is a dict, provide a view of its values."""
+        """If the unwrapped config object is a dict, provide a view of its values."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'values'")
 
     def items(self) -> "Iterable[tuple[DataObj, ConfigObj]]":
-        """If the unwrapped config-object is a dict, provide a view of its items."""
+        """If the unwrapped config object is a dict, provide a view of its items."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'items'")
 
     def append(self, __object: "ConfigObj") -> None:
-        """If the unwrapped config-object is a list, append to its end."""
+        """If the unwrapped config object is a list, append to its end."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'append'")
 
     def extend(self, __object: "Iterable[ConfigObj]") -> None:
-        """If the unwrapped config-object is a list, extend it."""
+        """If the unwrapped config object is a list, extend it."""
         raise TypeError(f"{self.__obj_desc()} has no attribute 'extend'")
 
-    def form(self, template: "ConfigObj", /) -> Self:
-        """Form into the template."""
+    def match(self, template: "ConfigObj", /) -> Self:
+        """Match the template from the top level."""
 
     def save(
         self,
@@ -261,15 +261,15 @@ class ConfigIOWrapper(ConfigSaver):
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
     def to_object(self) -> "UnwrappedConfigObj":
-        """Returns the unwrapped config-object."""
+        """Returns the unwrapped config object."""
         return self.__obj
 
     def to_dict(self) -> dict["DataObj", "UnwrappedConfigObj"]:
-        """Returns the unwrapped config-object if it's a dict."""
+        """Returns the unwrapped config object if it's a dict."""
         raise TypeError(f"{self.__obj_desc()} can't be converted into a dict")
 
     def to_list(self) -> list["UnwrappedConfigObj"]:
-        """Returns the unwrapped config-object if it's a list."""
+        """Returns the unwrapped config object if it's a list."""
         raise TypeError(f"{self.__obj_desc()} can't be converted into a list")
 
     def to_html(self) -> HTMLTreeMaker:
@@ -277,7 +277,7 @@ class ConfigIOWrapper(ConfigSaver):
         return HTMLTreeMaker(repr(self.__obj))
 
     def type(self) -> "UnwrappedConfigTypeStr":
-        """Return the type of the unwrapped config-object."""
+        """Return the type of the unwrapped config object."""
         return self.__obj.__class__.__name__
 
     def set_path(self, path: str | Path) -> None:
@@ -302,7 +302,7 @@ class ConfigIOWrapper(ConfigSaver):
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
     def __obj_desc(self) -> str:
-        return f"the config-object of type {self.type()!r}"
+        return f"the config object of type {self.type()!r}"
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):
@@ -310,8 +310,11 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         super().__init__(obj, *args, **kwargs)
         new_obj: dict["DataObj", "ConfigObj"] = {}
         for k, v in obj.items():
-            if k is not None and not isinstance(k, (bool, int, float, str, bytes)):
-                raise TypeError(f"invalid type of dict key: {k.__class__.__name__!r}")
+            if k is not None and not isinstance(k, (str, int, float, bool)):
+                raise TypeError(
+                    "keys must be str, int, float, bool or None, not "
+                    + k.__class__.__name__
+                )
             if isinstance(v, ConfigIOWrapper):
                 new_obj[k] = v
             else:
