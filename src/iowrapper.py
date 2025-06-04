@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from ._typing import (
         ConfigFileFormat,
         ConfigObj,
-        ConfigTpl,
         DataObj,
         UnwrappedConfigObj,
         UnwrappedConfigTypeStr,
@@ -77,14 +76,18 @@ class ConfigIOWrapper(ConfigSaver):
 
     valid_types = (str, int, float, bool, NoneType)
     constructor = object
+    sub_constructors = {
+        dict: lambda: _DictConfigIOWrapper,
+        list: lambda: _ListConfigIOWrapper,
+    }
 
     def __new__(cls, obj: "ConfigObj", *args, **kwargs) -> Self:
         if isinstance(obj, cls):
             return obj
         if isinstance(obj, dict):
-            new_class = _DictConfigIOWrapper
+            new_class = cls.sub_constructors[dict]()
         elif isinstance(obj, list):
-            new_class = _ListConfigIOWrapper
+            new_class = cls.sub_constructors[list]()
         elif isinstance(obj, cls.valid_types):
             new_class = cls
         else:
@@ -114,10 +117,10 @@ class ConfigIOWrapper(ConfigSaver):
         self.encoding = encoding
 
     def __getitem__(self, __key: "DataObj") -> Self:
-        raise TypeError(f"{self._desc()} is not subscriptable")
+        raise TypeError(f"{self.__desc()} is not subscriptable")
 
     def __setitem__(self, __key: "DataObj", __value: "ConfigObj") -> None:
-        raise TypeError(f"{self._desc()} does not support item assignment")
+        raise TypeError(f"{self.__desc()} does not support item assignment")
 
     def __enter__(self) -> Self:
         if self.path is None:
@@ -189,25 +192,25 @@ class ConfigIOWrapper(ConfigSaver):
 
     def keys(self) -> "Iterable[DataObj]":
         """If the unwrapped config object is a dict, provide a view of its keys."""
-        raise TypeError(f"{self._desc()} has no method keys()")
+        raise TypeError(f"{self.__desc()} has no method keys()")
 
     def values(self) -> "Iterable[ConfigObj]":
         """If the unwrapped config object is a dict, provide a view of its values."""
-        raise TypeError(f"{self._desc()} has no method 'values()'")
+        raise TypeError(f"{self.__desc()} has no method 'values()'")
 
     def items(self) -> "Iterable[tuple[DataObj, ConfigObj]]":
         """If the unwrapped config object is a dict, provide a view of its items."""
-        raise TypeError(f"{self._desc()} has no method 'items()'")
+        raise TypeError(f"{self.__desc()} has no method 'items()'")
 
     def append(self, __object: "ConfigObj") -> None:
         """If the unwrapped config object is a list, append to its end."""
-        raise TypeError(f"{self._desc()} has no method 'append()'")
+        raise TypeError(f"{self.__desc()} has no method 'append()'")
 
     def extend(self, __object: "Iterable[ConfigObj]") -> None:
         """If the unwrapped config object is a list, extend it."""
-        raise TypeError(f"{self._desc()} has no method 'extend()'")
+        raise TypeError(f"{self.__desc()} has no method 'extend()'")
 
-    def match(self, template: "ConfigTpl", /) -> Self:
+    def match(self, template: "ConfigObj", /) -> Self:
         """Match the template from the top level."""
 
     def save(
@@ -272,11 +275,11 @@ class ConfigIOWrapper(ConfigSaver):
 
     def to_dict(self) -> dict["DataObj", "UnwrappedConfigObj"]:
         """Returns the unwrapped config object if it's a dict."""
-        raise TypeError(f"{self._desc()} can't be converted into a dict")
+        raise TypeError(f"{self.__desc()} can't be converted into a dict")
 
     def to_list(self) -> list["UnwrappedConfigObj"]:
         """Returns the unwrapped config object if it's a list."""
-        raise TypeError(f"{self._desc()} can't be converted into a list")
+        raise TypeError(f"{self.__desc()} can't be converted into a list")
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
@@ -307,12 +310,13 @@ class ConfigIOWrapper(ConfigSaver):
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
-    def _desc(self) -> str:
+    def __desc(self) -> str:
         return f"config object of type {self.type()}"
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):
     constructor = ConfigIOWrapper
+    sub_constructors = {}
 
     def __init__(self, obj: "ConfigObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
@@ -397,6 +401,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
 
 class _ListConfigIOWrapper(ConfigIOWrapper):
     constructor = ConfigIOWrapper
+    sub_constructors = {}
 
     def __init__(self, obj: "ConfigObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
@@ -486,24 +491,20 @@ class ConfigTemplate(ConfigIOWrapper):
 
     valid_types = (str, int, float, bool, NoneType, type, Callable)
     constructor = object
+    sub_constructors = {
+        dict: lambda: _DictConfigTemplate,
+        list: lambda: _ListConfigTemplate,
+    }
 
-    def __new__(cls, obj: "ConfigObj", *args, **kwargs) -> Self:
-        if isinstance(obj, cls):
-            return obj
-        if isinstance(obj, dict):
-            new_class = _DictConfigIOWrapper
-        elif isinstance(obj, list):
-            new_class = _ListConfigIOWrapper
-        elif isinstance(obj, cls.valid_types):
-            new_class = cls
-        else:
-            raise TypeError(
-                f"config template of type {obj.__class__.__name__} is not allowed"
-            )
-        return cls.constructor.__new__(new_class)
 
-    def _desc(self) -> str:
-        return f"config template of type {self.type()}"
+class _DictConfigTemplate(ConfigTemplate):
+    constructor = ConfigTemplate
+    sub_constructors = {}
+
+
+class _ListConfigTemplate(ConfigTemplate):
+    constructor = ConfigTemplate
+    sub_constructors = {}
 
 
 class FileFormatError(Exception):
