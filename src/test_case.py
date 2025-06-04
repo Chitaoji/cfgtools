@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ._typing import ConfigIOWrapper
 
 
-__all__ = ["ip_locations", "customer_data"]
+__all__ = ["ip_locations", "customer_data", "order_records"]
 
 
 def ip_locations(
