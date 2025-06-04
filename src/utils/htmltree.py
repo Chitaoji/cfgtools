@@ -57,9 +57,19 @@ class HTMLTreeMaker:
         elif isinstance(maybe_value, list):
             if maybe_cls:
                 for x in maybe_value:
+                    if not isinstance(x, self.__class__):
+                        raise TypeError(
+                            f"object of type {x.__class__.__name__} is not allowed "
+                            "to be a child node"
+                        )
                     x.setcls(maybe_cls)
             self.__children.extend(maybe_value)
         else:
+            if not isinstance(maybe_value, self.__class__):
+                raise TypeError(
+                    f"object of type {maybe_value.__class__.__name__} is not allowed "
+                    "to be a child node"
+                )
             if maybe_cls:
                 maybe_value.setcls(maybe_cls)
             self.__children.append(maybe_value)
