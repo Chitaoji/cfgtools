@@ -45,9 +45,8 @@ def customer_data(
     number_of_customers: int = 20, seed: int | None = None
 ) -> "ConfigIOWrapper":
     """
-    Returns a fake mapping of customers' names to their infomation,
-    including their names, emails, phone, numbers, addresses, and order
-    records.
+    Returns a fake mapping of customers' names to their data, including
+    their names, emails, phone, numbers, addresses, and order records.
 
     Parameters
     ----------
@@ -84,4 +83,49 @@ def customer_data(
                 for __ in range(faker.pyint(min_value=1, max_value=10))
             ],
         }
+    return config(data)
+
+
+def order_records(
+    number_of_orders: int = 20, seed: int | None = None
+) -> "ConfigIOWrapper":
+    """
+    Returns a fake list of order records, including order-ids,
+    product-ids, quantities, unit prices, trading dates,
+    completed-or-not boolean numbers, and the customer info mappings.
+
+    Parameters
+    ----------
+    number_of_orders : int, optional
+        Number of orders, by default 20.
+    seed : int | None, optional
+        Seed value, by default None.
+
+    Returns
+    -------
+    ConfigIOWrapper
+        Config object.
+
+    """
+    faker = Faker()
+    faker.seed_instance(seed)
+    data = []
+    for _ in range(number_of_orders):
+        name = faker.name()
+        data.append(
+            {
+                "order_id": faker.uuid4(),
+                "product_id": faker.md5(),
+                "quantity": faker.pyint(1, 1000),
+                "unit_price": faker.pyfloat(3, 2, True),
+                "date": str(faker.date_this_year()),
+                "completed": faker.pybool(),
+                "customer_info": {
+                    "name": name,
+                    "email": faker.email(),
+                    "phone_number": faker.phone_number(),
+                    "address": [faker.city()] + faker.address().splitlines(),
+                },
+            }
+        )
     return config(data)
