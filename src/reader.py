@@ -18,7 +18,7 @@ from yaml.scanner import ScannerError
 from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, UnwrappedConfigObj
+    from ._typing import ConfigFileFormat, UnwrappedDataObj
 
 __all__ = [
     "detect_encoding",
@@ -245,7 +245,7 @@ def read_config_from_bytes(
     return ConfigIOWrapper(cfg, "bytes", path=path, encoding=encoding)
 
 
-def _obj_restore(string: str) -> "UnwrappedConfigObj":
+def _obj_restore(string: str) -> "UnwrappedDataObj":
     try:
         return json.loads(string)
     except json.JSONDecodeError:

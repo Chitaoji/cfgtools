@@ -13,23 +13,11 @@ from .iowrapper import ConfigIOWrapper
 
 loggings.warning("this module is not intended to be imported at runtime")
 
-DataObj = str | int | float | bool | None | type | Callable
-UnwrappedConfigObj = (
-    dict[DataObj, "UnwrappedConfigObj"] | list["UnwrappedConfigObj"] | DataObj
+BasicObj = str | int | float | bool | None | type | Callable
+UnwrappedDataObj = (
+    dict[BasicObj, "UnwrappedDataObj"] | list["UnwrappedDataObj"] | BasicObj
 )
-ConfigObj = dict[DataObj, "ConfigObj"] | list["ConfigObj"] | DataObj | ConfigIOWrapper
+DataObj = dict[BasicObj, "DataObj"] | list["DataObj"] | BasicObj | ConfigIOWrapper
 ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
-]
-UnwrappedConfigTypeStr = Literal[
-    "dict",
-    "list",
-    "bool",
-    "int",
-    "float",
-    "str",
-    "bytes",
-    "NoneType",
-    "type",
-    "function",
 ]

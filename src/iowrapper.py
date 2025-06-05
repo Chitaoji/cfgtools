@@ -15,13 +15,7 @@ from .saver import ConfigSaver
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
-    from ._typing import (
-        ConfigFileFormat,
-        ConfigObj,
-        DataObj,
-        UnwrappedConfigObj,
-        UnwrappedConfigTypeStr,
-    )
+    from ._typing import BasicObj, ConfigFileFormat, DataObj, UnwrappedDataObj
 NoneType = type(None)
 
 __all__ = ["FileFormatError", "MAX_LINE_WIDTH"]
@@ -57,8 +51,8 @@ class ConfigIOWrapper(ConfigSaver):
 
     Parameters
     ----------
-    obj : ConfigObj
-        The object to be wrapped.
+    data : DataObj
+        The config data to be wrapped.
     fileformat : ConfigFileFormat, optional
         File format, by default None.
     path : str | Path | None, optional
@@ -70,7 +64,7 @@ class ConfigIOWrapper(ConfigSaver):
     Raises
     ------
     TypeError
-        Raised if the type of the config object is invalid.
+        Raised if the config data has invalid type.
 
     """
 
@@ -82,30 +76,30 @@ class ConfigIOWrapper(ConfigSaver):
     }
     is_template = False
 
-    def __new__(cls, obj: "ConfigObj", *args, **kwargs) -> Self:
-        if isinstance(obj, cls):
-            return obj
-        if isinstance(obj, dict):
+    def __new__(cls, data: "DataObj", *args, **kwargs) -> Self:
+        if isinstance(data, cls):
+            return data
+        if isinstance(data, dict):
             new_class = cls.sub_constructors[dict]()
-        elif isinstance(obj, list):
+        elif isinstance(data, list):
             new_class = cls.sub_constructors[list]()
-        elif isinstance(obj, cls.valid_types):
+        elif isinstance(data, cls.valid_types):
             new_class = cls
         else:
-            raise TypeError(f"invalid config type: {obj.__class__.__name__}")
+            raise TypeError(f"invalid config type: {data.__class__.__name__}")
         return cls.constructor.__new__(new_class)
 
     def __init__(
         self,
-        obj: "ConfigObj",
+        data: "DataObj",
         fileformat: "ConfigFileFormat | None" = None,
         /,
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
-        if isinstance(obj, self.__class__):
+        if isinstance(data, self.__class__):
             return
-        self.__obj = obj
+        self.__obj = data
         self.fileformat = fileformat
         self.overwrite_ok = True
         if path is None:
@@ -115,10 +109,10 @@ class ConfigIOWrapper(ConfigSaver):
             self.path = path.absolute().relative_to(path.cwd()).as_posix()
         self.encoding = encoding
 
-    def __getitem__(self, __key: "DataObj") -> Self:
+    def __getitem__(self, __key: "BasicObj") -> Self:
         raise TypeError(f"{self.__desc()} is not subscriptable")
 
-    def __setitem__(self, __key: "DataObj", __value: "ConfigObj") -> None:
+    def __setitem__(self, __key: "BasicObj", __value: "DataObj") -> None:
         raise TypeError(f"{self.__desc()} does not support item assignment")
 
     def __enter__(self) -> Self:
@@ -183,27 +177,27 @@ class ConfigIOWrapper(ConfigSaver):
         _ = level
         return repr(self.__obj)
 
-    def keys(self) -> "Iterable[DataObj]":
-        """If the unwrapped config object is a dict, provide a view of its keys."""
+    def keys(self) -> "Iterable[BasicObj]":
+        """If the config data is a mapping, provide a view of its wrapped keys."""
         raise TypeError(f"{self.__desc()} has no method keys()")
 
-    def values(self) -> "Iterable[ConfigObj]":
-        """If the unwrapped config object is a dict, provide a view of its values."""
+    def values(self) -> "Iterable[DataObj]":
+        """If the config data is a mapping, provide a view of its wrapped values."""
         raise TypeError(f"{self.__desc()} has no method 'values()'")
 
-    def items(self) -> "Iterable[tuple[DataObj, ConfigObj]]":
-        """If the unwrapped config object is a dict, provide a view of its items."""
+    def items(self) -> "Iterable[tuple[BasicObj, DataObj]]":
+        """If the config data is a mapping, provide a view of its wrapped items."""
         raise TypeError(f"{self.__desc()} has no method 'items()'")
 
-    def append(self, __object: "ConfigObj") -> None:
-        """If the unwrapped config object is a list, append to its end."""
+    def append(self, __object: "DataObj") -> None:
+        """If the config data is a list, append to its end."""
         raise TypeError(f"{self.__desc()} has no method 'append()'")
 
-    def extend(self, __object: "Iterable[ConfigObj]") -> None:
-        """If the unwrapped config object is a list, extend it."""
+    def extend(self, __object: "Iterable[DataObj]") -> None:
+        """If the config data is a list, extend it."""
         raise TypeError(f"{self.__desc()} has no method 'extend()'")
 
-    def match(self, template: "ConfigObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         """Match the template from the top level."""
         if self.is_template:
             raise TypeError("can't match on a template")
@@ -284,25 +278,25 @@ class ConfigIOWrapper(ConfigSaver):
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
-    def to_object(self) -> "UnwrappedConfigObj":
-        """Returns the unwrapped config object."""
+    def to_object(self) -> "UnwrappedDataObj":
+        """Returns the unwrapped config data."""
         return self.__obj
 
-    def to_dict(self) -> dict["DataObj", "UnwrappedConfigObj"]:
-        """Returns the unwrapped config object if it's a dict."""
+    def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
+        """Returns the unwrapped config data if it's a mapping."""
         raise TypeError(f"{self.__desc()} can't be converted into a dict")
 
-    def to_list(self) -> list["UnwrappedConfigObj"]:
-        """Returns the unwrapped config object if it's a list."""
+    def to_list(self) -> list["UnwrappedDataObj"]:
+        """Returns the unwrapped config data if it's a list."""
         raise TypeError(f"{self.__desc()} can't be converted into a list")
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
         return HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
 
-    def type(self) -> "UnwrappedConfigTypeStr":
-        """Return the type of the unwrapped config object."""
-        return self.__obj.__class__.__name__
+    def type(self) -> type["DataObj"]:
+        """Return the type of the unwrapped data"""
+        return self.__obj.__class__
 
     def set_path(self, path: str | Path) -> None:
         """Set the path."""
@@ -326,16 +320,16 @@ class ConfigIOWrapper(ConfigSaver):
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
     def __desc(self) -> str:
-        return f"config object of type {self.type()}"
+        return f"config object of type {self.type().__name__}"
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def __init__(self, obj: "ConfigObj", *args, **kwargs) -> None:
+    def __init__(self, obj: "DataObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
-        new_obj: dict["DataObj", "ConfigObj"] = {}
+        new_obj: dict["BasicObj", "DataObj"] = {}
         for k, v in obj.items():
             if not isinstance(k, self.valid_types):
                 raise TypeError(f"invalid key type: {k.__class__.__name__}")
@@ -347,10 +341,10 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
                 )
         self.__obj = new_obj
 
-    def __getitem__(self, __key: "DataObj") -> Self:
+    def __getitem__(self, __key: "BasicObj") -> Self:
         return self.__obj[__key]
 
-    def __setitem__(self, __key: "DataObj", __value: "ConfigObj") -> None:
+    def __setitem__(self, __key: "BasicObj", __value: "DataObj") -> None:
         if isinstance(__value, self.constructor):
             self.__obj[__key] = __value
         else:
@@ -382,19 +376,19 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         string += "\n".join(lines) + f"\n{_sep(level)}" "}"
         return string
 
-    def keys(self) -> Iterable["DataObj"]:
+    def keys(self) -> Iterable["BasicObj"]:
         return self.__obj.keys()
 
-    def values(self) -> Iterable["ConfigObj"]:
+    def values(self) -> Iterable["DataObj"]:
         return self.__obj.values()
 
-    def items(self) -> Iterable[tuple["DataObj", "ConfigObj"]]:
+    def items(self) -> Iterable[tuple["BasicObj", "DataObj"]]:
         return self.__obj.items()
 
-    def to_object(self) -> "UnwrappedConfigObj":
+    def to_object(self) -> "UnwrappedDataObj":
         return {k: v.to_object() for k, v in self.__obj.items()}
 
-    def to_dict(self) -> dict["DataObj", "UnwrappedConfigObj"]:
+    def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.to_object()
 
     def to_html(self) -> HTMLTreeMaker:
@@ -418,9 +412,9 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def __init__(self, obj: "ConfigObj", *args, **kwargs) -> None:
+    def __init__(self, obj: "DataObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
-        new_obj: list["ConfigObj"] = []
+        new_obj: list["DataObj"] = []
         for x in obj:
             if isinstance(x, self.constructor):
                 new_obj.append(x)
@@ -454,7 +448,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
 
-    def append(self, __object: "ConfigObj") -> None:
+    def append(self, __object: "DataObj") -> None:
         if isinstance(__object, self.constructor):
             self.__obj.append(__object)
         else:
@@ -462,7 +456,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                 self.constructor(__object, self.fileformat, encoding=self.encoding)
             )
 
-    def extend(self, __iterable: Iterable["ConfigObj"]) -> None:
+    def extend(self, __iterable: Iterable["DataObj"]) -> None:
         if isinstance(__iterable, self.__class__):
             self.__obj.extend(list(__iterable))
         else:
@@ -474,10 +468,10 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                 )
             )
 
-    def to_object(self) -> "UnwrappedConfigObj":
+    def to_object(self) -> "UnwrappedDataObj":
         return [x.to_object() for x in self.__obj]
 
-    def to_list(self) -> list["UnwrappedConfigObj"]:
+    def to_list(self) -> list["UnwrappedDataObj"]:
         return self.to_object()
 
     def to_html(self) -> HTMLTreeMaker:

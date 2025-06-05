@@ -13,7 +13,7 @@ from .iowrapper import ConfigIOWrapper, ConfigTemplate
 from .reader import ConfigReader
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, ConfigObj
+    from ._typing import ConfigFileFormat, DataObj
 
 __all__ = ["read", "config", "template"]
 
@@ -56,14 +56,14 @@ def read(
     return wrapper
 
 
-def config(obj: "ConfigObj" = None, /) -> ConfigIOWrapper:
+def config(data: "DataObj" = None, /) -> ConfigIOWrapper:
     """
     Initialize a new config object.
 
     Parameters
     ----------
-    obj : ConfigObj, optional
-        Config object, by default None.
+    data : DataObj, optional
+        Config data, by default None.
 
     Returns
     -------
@@ -71,16 +71,16 @@ def config(obj: "ConfigObj" = None, /) -> ConfigIOWrapper:
         A wrapper for reading and writing config files.
 
     """
-    return ConfigIOWrapper(obj)
+    return ConfigIOWrapper(data)
 
 
-def template(tpl: "ConfigObj", /) -> ConfigTemplate:
+def template(tpl: "DataObj", /) -> ConfigTemplate:
     """
     Initialize a new config template.
 
     Parameters
     ----------
-    tpl : ConfigObj, optional
+    tpl : DataObj, optional
         Config template, by default None.
 
     Returns
