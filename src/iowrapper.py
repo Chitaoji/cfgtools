@@ -86,7 +86,7 @@ class ConfigIOWrapper(ConfigSaver):
         elif isinstance(data, cls.valid_types):
             new_class = cls
         else:
-            raise TypeError(f"invalid config type: {data.__class__.__name__}")
+            raise TypeError(f"invalid type of data: {data.__class__.__name__}")
         return cls.constructor.__new__(new_class)
 
     def __init__(
@@ -131,7 +131,7 @@ class ConfigIOWrapper(ConfigSaver):
         self.save()
 
     def __repr__(self) -> str:
-        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             s = flat
         else:
             s = self.repr()
@@ -155,7 +155,7 @@ class ConfigIOWrapper(ConfigSaver):
         return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
-        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return flat
         return self.repr()
 
@@ -206,20 +206,17 @@ class ConfigIOWrapper(ConfigSaver):
                 raise TypeError("expected a config template")
         else:
             template = ConfigTemplate(template)
-        match template.type():
-            case "list":
-                pass
-            case "dict":
-                pass
-            case "type":
-                if isinstance(self.__obj, template.to_object()):
-                    return self
-            case "function":
-                if template.to_object()(self.__obj):
-                    return self
-            case _:
-                if self.__obj == template.to_object():
-                    return self
+
+        if isinstance(t := template.unwrap_top_level(), (dict, list)):
+            pass
+        elif isinstance(t, type):
+            if isinstance(self.__obj, t):
+                return self
+        elif isinstance(t, Callable):
+            if t(self.__obj):
+                return self
+        elif self.__obj == t:
+            return self
         return None
 
     def save(
@@ -278,8 +275,12 @@ class ConfigIOWrapper(ConfigSaver):
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
-    def to_object(self) -> "UnwrappedDataObj":
+    def unwrap(self) -> "UnwrappedDataObj":
         """Returns the unwrapped config data."""
+        return self.__obj
+
+    def unwrap_top_level(self) -> "DataObj":
+        """Returns the config data, with only the top level unwrapped."""
         return self.__obj
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
@@ -332,7 +333,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         new_obj: dict["BasicObj", "DataObj"] = {}
         for k, v in obj.items():
             if not isinstance(k, self.valid_types):
-                raise TypeError(f"invalid key type: {k.__class__.__name__}")
+                raise TypeError(f"invalid type of key: {k.__class__.__name__}")
             if isinstance(v, self.constructor):
                 new_obj[k] = v
             else:
@@ -360,7 +361,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         for k, v in self.__obj.items():
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
-            _flat = repr(v.to_object())
+            _flat = repr(v.unwrap())
             if lines and (len(_head) + len(_key) + len(_flat) + 2 <= max_line_width):
                 lines[-1] += " " + _key + _flat + ","
             elif len(seps) + len(_key) + len(_flat) < max_line_width:
@@ -385,14 +386,20 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
     def items(self) -> Iterable[tuple["BasicObj", "DataObj"]]:
         return self.__obj.items()
 
-    def to_object(self) -> "UnwrappedDataObj":
-        return {k: v.to_object() for k, v in self.__obj.items()}
+    def match(self, template: "DataObj", /) -> Self | None:
+        if matched := super().match(template):
+            return matched
+        if not isinstance(t := template.unwrap_top_level(), dict):
+            return None
+
+    def unwrap(self) -> "UnwrappedDataObj":
+        return {k: v.unwrap() for k, v in self.__obj.items()}
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
-        return self.to_object()
+        return self.unwrap()
 
     def to_html(self) -> HTMLTreeMaker:
-        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
         for k, v in self.__obj.items():
@@ -434,7 +441,7 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
             _head = lines[-1] if lines else ""
-            _flat = repr(x.to_object())
+            _flat = repr(x.unwrap())
             if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
                 lines[-1] += " " + _flat + ","
             elif len(_head) + len(_flat) < max_line_width:
@@ -468,14 +475,14 @@ class _ListConfigIOWrapper(ConfigIOWrapper):
                 )
             )
 
-    def to_object(self) -> "UnwrappedDataObj":
-        return [x.to_object() for x in self.__obj]
+    def unwrap(self) -> "UnwrappedDataObj":
+        return [x.unwrap() for x in self.__obj]
 
     def to_list(self) -> list["UnwrappedDataObj"]:
-        return self.to_object()
+        return self.unwrap()
 
     def to_html(self) -> HTMLTreeMaker:
-        if len(flat := repr(self.to_object())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
         for x in self.__obj:

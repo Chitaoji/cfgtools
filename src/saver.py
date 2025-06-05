@@ -25,7 +25,7 @@ __all__ = []
 class ConfigSaver:
     """Config saver."""
 
-    def to_object(self) -> "UnwrappedDataObj":
+    def unwrap_top_level(self) -> "UnwrappedDataObj":
         """Returns the config object without any wrapper."""
         return NotImplemented
 
@@ -38,19 +38,19 @@ class ConfigSaver:
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         with open(path, "w", encoding=encoding) as f:
-            yaml.safe_dump(self.to_object(), f, sort_keys=False)
+            yaml.safe_dump(self.unwrap_top_level(), f, sort_keys=False)
 
     def to_pickle(self, path: str | Path | None = None, /) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         with open(path, "wb") as f:
-            pickle.dump(self.to_object(), f)
+            pickle.dump(self.unwrap_top_level(), f)
 
     def to_json(
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         with open(path, "w", encoding=encoding) as f:
-            json.dump(self.to_object(), f)
+            json.dump(self.unwrap_top_level(), f)
 
     def to_ini(
         self, path: str | Path | None = None, /, encoding: str | None = None
@@ -65,14 +65,16 @@ class ConfigSaver:
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
-        Path(path).write_text(json.dumps(self.to_object()), encoding=encoding)
+        Path(path).write_text(json.dumps(self.unwrap_top_level()), encoding=encoding)
 
     def to_bytes(
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         encoding = sys.getdefaultencoding() if encoding is None else encoding
-        Path(path).write_bytes(bytes(json.dumps(self.to_object()), encoding=encoding))
+        Path(path).write_bytes(
+            bytes(json.dumps(self.unwrap_top_level()), encoding=encoding)
+        )
 
     def save(
         self,
