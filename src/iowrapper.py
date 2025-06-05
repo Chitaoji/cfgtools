@@ -80,6 +80,7 @@ class ConfigIOWrapper(ConfigSaver):
         dict: lambda: _DictConfigIOWrapper,
         list: lambda: _ListConfigIOWrapper,
     }
+    is_template = False
 
     def __new__(cls, obj: "ConfigObj", *args, **kwargs) -> Self:
         if isinstance(obj, cls):
@@ -91,9 +92,7 @@ class ConfigIOWrapper(ConfigSaver):
         elif isinstance(obj, cls.valid_types):
             new_class = cls
         else:
-            raise TypeError(
-                f"config object of type {obj.__class__.__name__} is not allowed"
-            )
+            raise TypeError(f"invalid config type: {obj.__class__.__name__}")
         return cls.constructor.__new__(new_class)
 
     def __init__(
@@ -157,7 +156,7 @@ class ConfigIOWrapper(ConfigSaver):
         maker.setcls("t")
         main_maker = HTMLTreeMaker()
         main_maker.add(maker)
-        if not isinstance(self, ConfigTemplate):
+        if not self.is_template:
             main_maker.add(info, "i")
         return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
@@ -204,8 +203,30 @@ class ConfigIOWrapper(ConfigSaver):
         """If the unwrapped config object is a list, extend it."""
         raise TypeError(f"{self.__desc()} has no method 'extend()'")
 
-    def match(self, template: "ConfigObj", /) -> Self:
+    def match(self, template: "ConfigObj", /) -> Self | None:
         """Match the template from the top level."""
+        if self.is_template:
+            raise TypeError("can't match on a template")
+        if isinstance(template, ConfigIOWrapper):
+            if not template.is_template:
+                raise TypeError("expected a config template")
+        else:
+            template = ConfigTemplate(template)
+        match template.type():
+            case "list":
+                pass
+            case "dict":
+                pass
+            case "type":
+                if isinstance(self.__obj, template.to_object()):
+                    return self
+            case "function":
+                if template.to_object()(self.__obj):
+                    return self
+            case _:
+                if self.__obj == template.to_object():
+                    return self
+        return None
 
     def save(
         self,
@@ -317,7 +338,7 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         new_obj: dict["DataObj", "ConfigObj"] = {}
         for k, v in obj.items():
             if not isinstance(k, self.valid_types):
-                raise TypeError(f"key of type {k.__class__.__name__} is not allowed")
+                raise TypeError(f"invalid key type: {k.__class__.__name__}")
             if isinstance(v, self.constructor):
                 new_obj[k] = v
             else:
@@ -489,6 +510,7 @@ class ConfigTemplate(ConfigIOWrapper):
         dict: lambda: _DictConfigTemplate,
         list: lambda: _ListConfigTemplate,
     }
+    is_template = True
 
 
 class _DictConfigTemplate(ConfigTemplate):

@@ -22,5 +22,14 @@ ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
 ]
 UnwrappedConfigTypeStr = Literal[
-    "dict", "list", "bool", "int", "float", "str", "bytes", "NoneType"
+    "dict",
+    "list",
+    "bool",
+    "int",
+    "float",
+    "str",
+    "bytes",
+    "NoneType",
+    "type",
+    "function",
 ]
