@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import json
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Iterable, Self
@@ -45,7 +46,7 @@ FORMAT_MAPPING = {
 MAX_LINE_WIDTH = 88
 
 
-class ConfigTemplate(ConfigSaver):
+class ConfigTemplate:
     """
     A wrapper for reading and writing config files.
 
@@ -74,7 +75,6 @@ class ConfigTemplate(ConfigSaver):
         dict: lambda: _DictConfigTemplate,
         list: lambda: _ListConfigTemplate,
     }
-    is_template = False
 
     def __new__(cls, data: "DataObj", *args, **kwargs) -> Self:
         if isinstance(data, cls):
@@ -115,21 +115,6 @@ class ConfigTemplate(ConfigSaver):
     def __setitem__(self, __key: "BasicObj", __value: "DataObj") -> None:
         raise TypeError(f"{self.__desc()} does not support item assignment")
 
-    def __enter__(self) -> Self:
-        if self.path is None:
-            raise TypeError("no default file path, please run self.set_path() first")
-        if not self.overwrite_ok:
-            raise TypeError(
-                "overwriting the original path is not allowed, please run "
-                "self.unlock() first"
-            )
-        self.lock()
-        return self
-
-    def __exit__(self, *args) -> None:
-        self.unlock()
-        self.save()
-
     def __repr__(self) -> str:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             s = flat
@@ -139,20 +124,8 @@ class ConfigTemplate(ConfigSaver):
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         maker = self.to_html()
-        if isinstance(maker, list):
-            merged_html = HTMLTreeMaker()
-            merged_html.add(maker)
-            maker = merged_html
-        info = (
-            f"format: {self.fileformat!r} | path: {self.path!r} "
-            f"| encoding: {self.encoding!r}"
-        )
         maker.setcls("t")
-        main_maker = HTMLTreeMaker()
-        main_maker.add(maker)
-        if not self.is_template:
-            main_maker.add(info, "i")
-        return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
+        return {"text/html": maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
@@ -197,84 +170,6 @@ class ConfigTemplate(ConfigSaver):
         """If the config data is a list, extend it."""
         raise TypeError(f"{self.__desc()} has no method 'extend()'")
 
-    def match(self, template: "DataObj", /) -> Self | None:
-        """Match the template from the top level."""
-        if self.is_template:
-            raise TypeError("can't match on a template")
-        if isinstance(template, ConfigIOWrapper):
-            if not template.is_template:
-                raise TypeError("expected a config template")
-        else:
-            template = ConfigTemplate(template)
-
-        if isinstance(t := template.unwrap_top_level(), (dict, list)):
-            pass
-        elif isinstance(t, type):
-            if isinstance(self.__obj, t):
-                return self
-        elif isinstance(t, Callable):
-            if t(self.__obj):
-                return self
-        elif self.__obj == t:
-            return self
-        return None
-
-    def save(
-        self,
-        path: str | Path | None = None,
-        fileformat: "ConfigFileFormat | None" = None,
-        /,
-        encoding: str | None = None,
-    ) -> None:
-        """
-        Save the config.
-
-        Parameters
-        ----------
-        path : str | Path | None, optional
-            File path, by default None. If not specified, use `self.path`
-            instead.
-        fileformat : ConfigFileFormat | None, optional
-            File format to save, by default None. If not specified, the
-            file format will be automatically decided.
-        encoding : str | None, optional
-            The name of the encoding used to decode or encode the file
-            (if needed), by default None. If not specified, use
-            `self.encoding` instead.
-
-        Raises
-        ------
-        ValueError
-            Raised if both `path` and `self.path` are None.
-        FileFormatError
-            Raised if the file format is not supported.
-        TypeError
-            Raised if `self.overwrite_ok` is False.
-
-        """
-        if path is None:
-            if self.path is None:
-                raise ValueError(
-                    "no default file path, please specify the path or run "
-                    "self.set_path() first"
-                )
-            if not self.overwrite_ok:
-                raise TypeError(
-                    "overwriting the original path is not allowed, please run "
-                    "self.unlock() first"
-                )
-            path = self.path
-        if fileformat is None:
-            if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
-                fileformat = SUFFIX_MAPPING[suffix]
-            else:
-                fileformat = "json" if self.fileformat is None else self.fileformat
-        encoding = self.encoding if encoding is None else encoding
-        if fileformat in FORMAT_MAPPING:
-            super().save(path, FORMAT_MAPPING[fileformat], encoding=encoding)
-        else:
-            raise FileFormatError(f"unsupported config file format: {fileformat!r}")
-
     def unwrap(self) -> "UnwrappedDataObj":
         """Returns the unwrapped config data."""
         return self.__obj
@@ -282,6 +177,17 @@ class ConfigTemplate(ConfigSaver):
     def unwrap_top_level(self) -> "DataObj":
         """Returns the config data, with only the top level unwrapped."""
         return self.__obj
+
+    def to_ini_dict(self) -> dict:
+        """Reformat the config data with `.ini` format, and returns a dict."""
+        obj = self.unwrap()
+        if isinstance(obj, dict):
+            if all(isinstance(v, dict) for v in obj.values()):
+                return {
+                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
+                }
+            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
+        return {"null": {"null": json.dumps(obj)}}
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         """Returns the unwrapped config data if it's a mapping."""
@@ -298,23 +204,6 @@ class ConfigTemplate(ConfigSaver):
     def type(self) -> type["DataObj"]:
         """Return the type of the unwrapped data"""
         return self.__obj.__class__
-
-    def set_path(self, path: str | Path) -> None:
-        """Set the path."""
-        if not self.overwrite_ok:
-            raise TypeError(
-                "set_path() is not allowed when the instance is locked, "
-                "please run self.unlock() first"
-            )
-        self.path = path
-
-    def lock(self) -> None:
-        """Lock the original path so that it can not be overwritten."""
-        self.overwrite_ok = False
-
-    def unlock(self) -> None:
-        """Unlock the original path so that it can be overwritten."""
-        self.overwrite_ok = True
 
     def get_max_line_width(self) -> int:
         """Get the module variable `MAX_LINE_WIDTH`."""
@@ -386,14 +275,11 @@ class _DictConfigTemplate(ConfigTemplate):
     def items(self) -> Iterable[tuple["BasicObj", "DataObj"]]:
         return self.__obj.items()
 
-    def match(self, template: "DataObj", /) -> Self | None:
-        if matched := super().match(template):
-            return matched
-        if not isinstance(t := template.unwrap_top_level(), dict):
-            return None
-
     def unwrap(self) -> "UnwrappedDataObj":
         return {k: v.unwrap() for k, v in self.__obj.items()}
+
+    def unwrap_top_level(self) -> "DataObj":
+        return self.__obj
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.unwrap()
@@ -478,6 +364,9 @@ class _ListConfigTemplate(ConfigTemplate):
     def unwrap(self) -> "UnwrappedDataObj":
         return [x.unwrap() for x in self.__obj]
 
+    def unwrap_top_level(self) -> "DataObj":
+        return self.__obj
+
     def to_list(self) -> list["UnwrappedDataObj"]:
         return self.unwrap()
 
@@ -502,7 +391,7 @@ def _sep(level: int) -> str:
     return "    " * level
 
 
-class ConfigIOWrapper(ConfigTemplate):
+class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
     """A template for matching config objects."""
 
     valid_types = (str, int, float, bool, NoneType, type, Callable)
@@ -511,12 +400,139 @@ class ConfigIOWrapper(ConfigTemplate):
         dict: lambda: _DictConfigIOWrapper,
         list: lambda: _ListConfigIOWrapper,
     }
-    is_template = True
+
+    def __enter__(self) -> Self:
+        if self.path is None:
+            raise TypeError("no default file path, please run self.set_path() first")
+        if not self.overwrite_ok:
+            raise TypeError(
+                "overwriting the original path is not allowed, please run "
+                "self.unlock() first"
+            )
+        self.lock()
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.unlock()
+        self.save()
+
+    def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
+        maker = self.to_html()
+        maker.setcls("t")
+        main_maker = HTMLTreeMaker()
+        main_maker.add(maker)
+        main_maker.add(
+            (
+                f"format: {self.fileformat!r} | path: {self.path!r} "
+                f"| encoding: {self.encoding!r}"
+            ),
+            "i",
+        )
+        return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
+
+    def set_path(self, path: str | Path) -> None:
+        """Set the path."""
+        if not self.overwrite_ok:
+            raise TypeError(
+                "set_path() is not allowed when the instance is locked, "
+                "please run self.unlock() first"
+            )
+        self.path = path
+
+    def lock(self) -> None:
+        """Lock the original path so that it can not be overwritten."""
+        self.overwrite_ok = False
+
+    def unlock(self) -> None:
+        """Unlock the original path so that it can be overwritten."""
+        self.overwrite_ok = True
+
+    def match(self, template: "DataObj", /) -> Self | None:
+        """Match the template from the top level."""
+        if isinstance(template, ConfigTemplate):
+            if isinstance(template, ConfigIOWrapper):
+                raise TypeError("expected a config template")
+        else:
+            template = ConfigTemplate(template)
+
+        if isinstance(t := template.unwrap_top_level(), (dict, list)):
+            pass
+        elif isinstance(t, type):
+            if isinstance(self.__obj, t):
+                return self
+        elif isinstance(t, Callable):
+            if t(self.__obj):
+                return self
+        elif self.__obj == t:
+            return self
+        return None
+
+    def save(
+        self,
+        path: str | Path | None = None,
+        fileformat: "ConfigFileFormat | None" = None,
+        /,
+        encoding: str | None = None,
+    ) -> None:
+        """
+        Save the config.
+
+        Parameters
+        ----------
+        path : str | Path | None, optional
+            File path, by default None. If not specified, use `self.path`
+            instead.
+        fileformat : ConfigFileFormat | None, optional
+            File format to save, by default None. If not specified, the
+            file format will be automatically decided.
+        encoding : str | None, optional
+            The name of the encoding used to decode or encode the file
+            (if needed), by default None. If not specified, use
+            `self.encoding` instead.
+
+        Raises
+        ------
+        ValueError
+            Raised if both `path` and `self.path` are None.
+        FileFormatError
+            Raised if the file format is not supported.
+        TypeError
+            Raised if `self.overwrite_ok` is False.
+
+        """
+        if path is None:
+            if self.path is None:
+                raise ValueError(
+                    "no default file path, please specify the path or run "
+                    "self.set_path() first"
+                )
+            if not self.overwrite_ok:
+                raise TypeError(
+                    "overwriting the original path is not allowed, please run "
+                    "self.unlock() first"
+                )
+            path = self.path
+        if fileformat is None:
+            if (suffix := Path(path).suffix) in SUFFIX_MAPPING:
+                fileformat = SUFFIX_MAPPING[suffix]
+            else:
+                fileformat = "json" if self.fileformat is None else self.fileformat
+        encoding = self.encoding if encoding is None else encoding
+        if fileformat in FORMAT_MAPPING:
+            super().save(path, FORMAT_MAPPING[fileformat], encoding=encoding)
+        else:
+            raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
 
 class _DictConfigIOWrapper(ConfigIOWrapper, _DictConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
+
+    def match(self, template: "DataObj", /) -> Self | None:
+        if matched := super().match(template):
+            return matched
+        if not isinstance(t := template.unwrap_top_level(), dict):
+            return None
 
 
 class _ListConfigIOWrapper(ConfigIOWrapper, _ListConfigTemplate):

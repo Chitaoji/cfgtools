@@ -25,8 +25,8 @@ __all__ = []
 class ConfigSaver:
     """Config saver."""
 
-    def unwrap_top_level(self) -> "UnwrappedDataObj":
-        """Returns the config object without any wrapper."""
+    def unwrap(self) -> "UnwrappedDataObj":
+        """Returns the unwrapped config data."""
         return NotImplemented
 
     def to_ini_dict(self) -> dict:
@@ -38,19 +38,19 @@ class ConfigSaver:
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         with open(path, "w", encoding=encoding) as f:
-            yaml.safe_dump(self.unwrap_top_level(), f, sort_keys=False)
+            yaml.safe_dump(self.unwrap(), f, sort_keys=False)
 
     def to_pickle(self, path: str | Path | None = None, /) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         with open(path, "wb") as f:
-            pickle.dump(self.unwrap_top_level(), f)
+            pickle.dump(self.unwrap(), f)
 
     def to_json(
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         with open(path, "w", encoding=encoding) as f:
-            json.dump(self.unwrap_top_level(), f)
+            json.dump(self.unwrap(), f)
 
     def to_ini(
         self, path: str | Path | None = None, /, encoding: str | None = None
@@ -65,16 +65,14 @@ class ConfigSaver:
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
-        Path(path).write_text(json.dumps(self.unwrap_top_level()), encoding=encoding)
+        Path(path).write_text(json.dumps(self.unwrap()), encoding=encoding)
 
     def to_bytes(
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
         """Save the config in a json file. See `self.save()` for more details."""
         encoding = sys.getdefaultencoding() if encoding is None else encoding
-        Path(path).write_bytes(
-            bytes(json.dumps(self.unwrap_top_level()), encoding=encoding)
-        )
+        Path(path).write_bytes(bytes(json.dumps(self.unwrap()), encoding=encoding))
 
     def save(
         self,
