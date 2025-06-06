@@ -113,11 +113,11 @@ class ConfigTemplate:
         """If the data is a mapping, provide a view of its wrapped keys."""
         raise TypeError(f"{self.__desc()} has no method keys()")
 
-    def values(self) -> "Iterable[DataObj]":
+    def values(self) -> "Iterable[ConfigTemplate]":
         """If the data is a mapping, provide a view of its wrapped values."""
         raise TypeError(f"{self.__desc()} has no method 'values()'")
 
-    def items(self) -> "Iterable[tuple[BasicObj, DataObj]]":
+    def items(self) -> Iterable[tuple["BasicObj", "ConfigTemplate"]]:
         """If the data is a mapping, provide a view of its wrapped items."""
         raise TypeError(f"{self.__desc()} has no method 'items()'")
 
@@ -163,6 +163,10 @@ class ConfigTemplate:
     def get_max_line_width(self) -> int:
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
+
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
+        """Match the whole template from the top level."""
+        raise TypeError("can't match on a template")
 
     def __desc(self) -> str:
         return f"object of type {self.unwrap_top_level().__class__.__name__}"
@@ -222,10 +226,10 @@ class DictConfigTemplate(ConfigTemplate):
     def keys(self) -> Iterable["BasicObj"]:
         return self.__obj.keys()
 
-    def values(self) -> Iterable["DataObj"]:
+    def values(self) -> Iterable["ConfigTemplate"]:
         return self.__obj.values()
 
-    def items(self) -> Iterable[tuple["BasicObj", "DataObj"]]:
+    def items(self) -> Iterable[tuple["BasicObj", "ConfigTemplate"]]:
         return self.__obj.items()
 
     def unwrap(self) -> "UnwrappedDataObj":

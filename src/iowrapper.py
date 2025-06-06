@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+from itertools import zip_longest
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Self
 
@@ -139,23 +140,19 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         """Unlock the original path so that it can be overwritten."""
         self.overwrite_ok = True
 
-    def match(self, template: "DataObj", /) -> Self | None:
-        """Match the template from the top level."""
-        if isinstance(template, ConfigTemplate):
-            if isinstance(template, ConfigIOWrapper):
-                raise TypeError("expected a config template")
-        else:
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
+        if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
         if isinstance(t := template.unwrap_top_level(), (dict, list)):
             pass
         elif isinstance(t, type):
-            if isinstance(self.__obj, t):
+            if isinstance(self.unwrap_top_level(), t):
                 return self
         elif isinstance(t, Callable):
-            if t(self.__obj):
+            if t(self.unwrap_top_level()):
                 return self
-        elif self.__obj == t:
+        elif self.unwrap_top_level() == t:
             return self
         return None
 
@@ -222,11 +219,22 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def match(self, template: "DataObj", /) -> Self | None:
-        if matched := super().match(template):
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
+        if not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+        if matched := super().fullmatch(template):
             return matched
+
         if not isinstance(t := template.unwrap_top_level(), dict):
             return None
+
+        for i1, i2 in zip_longest(self.items(), t.items(), fillvalue=(None, None)):
+            k1, v1 = i1
+            k2, v2 = i2
+            if not (ConfigIOWrapper(k1).fullmatch(k2) and v1.fullmatch(v2)):
+                return None
+
+        return self
 
 
 class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
@@ -234,6 +242,22 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
 
     constructor = ConfigIOWrapper
     sub_constructors = {}
+
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
+        if not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+        if matched := super().fullmatch(template):
+            return matched
+
+        if not isinstance(t := template.unwrap_top_level(), list):
+            return None
+
+        for i1, i2 in zip_longest(self, t, fillvalue=None):
+            i1: ConfigIOWrapper
+            if not i1.fullmatch(i2):
+                return None
+
+        return self
 
 
 class FileFormatError(Exception):
