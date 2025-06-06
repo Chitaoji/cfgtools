@@ -67,13 +67,11 @@ class ConfigTemplate:
             raise TypeError(f"invalid type of data: {data.__class__.__name__}")
         return cls.constructor.__new__(new_class)
 
-    def __init__(self, data: "DataObj", *_, **__) -> None:
+    def __init__(self, data: "DataObj") -> None:
         if isinstance(data, self.__class__):
             return
         if not isinstance(data, (dict, list)):
             self.__obj = data
-        self.fileformat = None
-        self.encoding = None
 
     def __getitem__(self, __key: "BasicObj") -> Self:
         raise TypeError(f"{self.__desc()} is not subscriptable")
@@ -188,9 +186,7 @@ class _DictConfigTemplate(ConfigTemplate):
             if isinstance(v, self.constructor):
                 new_obj[k] = v
             else:
-                new_obj[k] = self.constructor(
-                    v, self.fileformat, encoding=self.encoding
-                )
+                new_obj[k] = self.constructor(v)
         self.__obj = new_obj
 
     def __getitem__(self, __key: "BasicObj") -> Self:
@@ -200,9 +196,7 @@ class _DictConfigTemplate(ConfigTemplate):
         if isinstance(__value, self.constructor):
             self.__obj[__key] = __value
         else:
-            self.__obj[__key] = self.constructor(
-                __value, self.fileformat, encoding=self.encoding
-            )
+            self.__obj[__key] = self.constructor(__value)
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
@@ -274,9 +268,7 @@ class _ListConfigTemplate(ConfigTemplate):
             if isinstance(x, self.constructor):
                 new_obj.append(x)
             else:
-                new_obj.append(
-                    self.constructor(x, self.fileformat, encoding=self.encoding)
-                )
+                new_obj.append(self.constructor(x))
         self.__obj = new_obj
 
     def __getitem__(self, __key: int) -> Self:
@@ -307,21 +299,13 @@ class _ListConfigTemplate(ConfigTemplate):
         if isinstance(__object, self.constructor):
             self.__obj.append(__object)
         else:
-            self.__obj.append(
-                self.constructor(__object, self.fileformat, encoding=self.encoding)
-            )
+            self.__obj.append(self.constructor(__object))
 
     def extend(self, __iterable: Iterable["DataObj"]) -> None:
         if isinstance(__iterable, self.__class__):
             self.__obj.extend(list(__iterable))
         else:
-            self.__obj.extend(
-                list(
-                    self.constructor(
-                        list(__iterable), self.fileformat, encoding=self.encoding
-                    )
-                )
-            )
+            self.__obj.extend(list(self.constructor(list(__iterable))))
 
     def unwrap(self) -> "UnwrappedDataObj":
         return [x.unwrap() for x in self.__obj]
