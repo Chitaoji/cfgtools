@@ -9,8 +9,9 @@ NOTE: this module is private. All functions and objects are available in the mai
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .iowrapper import ConfigIOWrapper, ConfigTemplate
+from .iowrapper import ConfigIOWrapper
 from .reader import ConfigReader
+from .tpl import ConfigTemplate
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, DataObj
