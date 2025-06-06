@@ -168,14 +168,6 @@ class ConfigTemplate:
         return f"object of type {self.unwrap_top_level().__class__.__name__}"
 
 
-class BasicElement(ConfigTemplate):
-    """Template of basic object."""
-
-    valid_types = (str, int, float, bool, NoneType)
-    constructor = object
-    sub_constructors = {}
-
-
 class DictConfigTemplate(ConfigTemplate):
     """Template of dict."""
 
