@@ -48,7 +48,7 @@ FORMAT_MAPPING = {
 class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
     """A template for matching config objects."""
 
-    valid_types = (str, int, float, bool, NoneType, type, Callable)
+    valid_types = (str, int, float, bool, NoneType)
     constructor = object
     sub_constructors = {
         dict: lambda: _DictConfigIOWrapper,

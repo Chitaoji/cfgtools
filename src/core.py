@@ -90,4 +90,6 @@ def template(tpl: "DataObj", /) -> ConfigTemplate:
         Template for matching config objects.
 
     """
+    if isinstance(tpl, ConfigIOWrapper):
+        tpl = tpl.unwrap()
     return ConfigTemplate(tpl)

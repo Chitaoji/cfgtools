@@ -8,7 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import sys
-from typing import TYPE_CHECKING, Iterable, Self
+from typing import TYPE_CHECKING, Callable, Iterable, Self
 
 from .css import TREE_CSS_STYLE
 from .utils.htmltree import HTMLTreeMaker
@@ -47,7 +47,7 @@ class ConfigTemplate:
 
     """
 
-    valid_types = (str, int, float, bool, NoneType)
+    valid_types = (str, int, float, bool, NoneType, type, Callable)
     constructor = object
     sub_constructors = {
         dict: lambda: _DictConfigTemplate,
@@ -89,7 +89,9 @@ class ConfigTemplate:
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         maker = self.to_html()
         maker.setcls("t")
-        return {"text/html": maker.make("cfgtools-tree", TREE_CSS_STYLE)}
+        main_maker = HTMLTreeMaker()
+        main_maker.add(maker)
+        return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
