@@ -26,32 +26,25 @@ MAX_LINE_WIDTH = 88
 
 class ConfigTemplate:
     """
-    A wrapper for reading and writing config files.
+    A template for matching config objects.
 
     Parameters
     ----------
     data : DataObj
-        The config data to be wrapped.
-    fileformat : ConfigFileFormat, optional
-        File format, by default None.
-    path : str | Path | None, optional
-        File path, by default None.
-    encoding : str | None, optional
-        The name of the encoding used to decode or encode the file
-        (if needed), by default None.
+        Template data.
 
     Raises
     ------
     TypeError
-        Raised if the config data has invalid type.
+        Raised if the template data has invalid type.
 
     """
 
     valid_types = (str, int, float, bool, NoneType, type, Callable)
     constructor = object
     sub_constructors = {
-        dict: lambda: _DictConfigTemplate,
-        list: lambda: _ListConfigTemplate,
+        dict: lambda: DictConfigTemplate,
+        list: lambda: ListConfigTemplate,
     }
 
     def __new__(cls, data: "DataObj", *args, **kwargs) -> Self:
@@ -84,7 +77,7 @@ class ConfigTemplate:
             s = flat
         else:
             s = self.repr()
-        return f"cfgtools.config({s})"
+        return f"cfgtools.template({s})"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         maker = self.to_html()
@@ -117,35 +110,35 @@ class ConfigTemplate:
         return repr(self.__obj)
 
     def keys(self) -> "Iterable[BasicObj]":
-        """If the config data is a mapping, provide a view of its wrapped keys."""
+        """If the data is a mapping, provide a view of its wrapped keys."""
         raise TypeError(f"{self.__desc()} has no method keys()")
 
     def values(self) -> "Iterable[DataObj]":
-        """If the config data is a mapping, provide a view of its wrapped values."""
+        """If the data is a mapping, provide a view of its wrapped values."""
         raise TypeError(f"{self.__desc()} has no method 'values()'")
 
     def items(self) -> "Iterable[tuple[BasicObj, DataObj]]":
-        """If the config data is a mapping, provide a view of its wrapped items."""
+        """If the data is a mapping, provide a view of its wrapped items."""
         raise TypeError(f"{self.__desc()} has no method 'items()'")
 
     def append(self, __object: "DataObj") -> None:
-        """If the config data is a list, append to its end."""
+        """If the data is a list, append to its end."""
         raise TypeError(f"{self.__desc()} has no method 'append()'")
 
     def extend(self, __object: "Iterable[DataObj]") -> None:
-        """If the config data is a list, extend it."""
+        """If the data is a list, extend it."""
         raise TypeError(f"{self.__desc()} has no method 'extend()'")
 
     def unwrap(self) -> "UnwrappedDataObj":
-        """Returns the unwrapped config data."""
+        """Returns the unwrapped data."""
         return self.__obj
 
     def unwrap_top_level(self) -> "DataObj":
-        """Returns the config data, with only the top level unwrapped."""
+        """Returns the data, with only the top level unwrapped."""
         return self.__obj
 
     def to_ini_dict(self) -> dict:
-        """Reformat the config data with `.ini` format, and returns a dict."""
+        """Reformat the data with `.ini` format, and returns a dict."""
         obj = self.unwrap()
         if isinstance(obj, dict):
             if all(isinstance(v, dict) for v in obj.values()):
@@ -156,11 +149,11 @@ class ConfigTemplate:
         return {"null": {"null": json.dumps(obj)}}
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
-        """Returns the unwrapped config data if it's a mapping."""
+        """Returns the unwrapped data if it's a mapping."""
         raise TypeError(f"{self.__desc()} can't be converted into a dict")
 
     def to_list(self) -> list["UnwrappedDataObj"]:
-        """Returns the unwrapped config data if it's a list."""
+        """Returns the unwrapped data if it's a list."""
         raise TypeError(f"{self.__desc()} can't be converted into a list")
 
     def to_html(self) -> HTMLTreeMaker:
@@ -172,10 +165,20 @@ class ConfigTemplate:
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
     def __desc(self) -> str:
-        return f"config object of type {self.unwrap_top_level().__class__.__name__}"
+        return f"object of type {self.unwrap_top_level().__class__.__name__}"
 
 
-class _DictConfigTemplate(ConfigTemplate):
+class BasicElement(ConfigTemplate):
+    """Template of basic object."""
+
+    valid_types = (str, int, float, bool, NoneType)
+    constructor = object
+    sub_constructors = {}
+
+
+class DictConfigTemplate(ConfigTemplate):
+    """Template of dict."""
+
     constructor = ConfigTemplate
     sub_constructors = {}
 
@@ -259,7 +262,9 @@ class _DictConfigTemplate(ConfigTemplate):
         return maker
 
 
-class _ListConfigTemplate(ConfigTemplate):
+class ListConfigTemplate(ConfigTemplate):
+    """Template of list."""
+
     constructor = ConfigTemplate
     sub_constructors = {}
 

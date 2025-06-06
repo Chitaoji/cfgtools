@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Callable, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
-from .tpl import ConfigTemplate, _DictConfigTemplate, _ListConfigTemplate
+from .tpl import ConfigTemplate, DictConfigTemplate, ListConfigTemplate
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
@@ -46,13 +46,33 @@ FORMAT_MAPPING = {
 
 
 class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
-    """A template for matching config objects."""
+    """
+    A wrapper for reading and writing config files.
+
+    Parameters
+    ----------
+    data : DataObj
+        The config data to be wrapped.
+    fileformat : ConfigFileFormat, optional
+        File format, by default None.
+    path : str | Path | None, optional
+        File path, by default None.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file
+        (if needed), by default None.
+
+    Raises
+    ------
+    TypeError
+        Raised if the config data has invalid type.
+
+    """
 
     valid_types = (str, int, float, bool, NoneType)
     constructor = object
     sub_constructors = {
-        dict: lambda: _DictConfigIOWrapper,
-        list: lambda: _ListConfigIOWrapper,
+        dict: lambda: DictConfigIOWrapper,
+        list: lambda: ListConfigIOWrapper,
     }
 
     def __init__(
@@ -196,7 +216,9 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
 
-class _DictConfigIOWrapper(ConfigIOWrapper, _DictConfigTemplate):
+class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
+    """A wrapper for reading and writing config files."""
+
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
@@ -207,7 +229,9 @@ class _DictConfigIOWrapper(ConfigIOWrapper, _DictConfigTemplate):
             return None
 
 
-class _ListConfigIOWrapper(ConfigIOWrapper, _ListConfigTemplate):
+class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
+    """A wrapper for reading and writing config files."""
+
     constructor = ConfigIOWrapper
     sub_constructors = {}
 

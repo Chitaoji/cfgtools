@@ -9,11 +9,11 @@ from typing import Callable, Literal
 
 import loggings
 
-from .iowrapper import ConfigTemplate
+from .tpl import BasicElement, ConfigTemplate
 
 loggings.warning("this module is not intended to be imported at runtime")
 
-BasicObj = str | int | float | bool | None | type | Callable
+BasicObj = str | int | float | bool | None | type | Callable | BasicElement
 UnwrappedDataObj = (
     dict[BasicObj, "UnwrappedDataObj"] | list["UnwrappedDataObj"] | BasicObj
 )

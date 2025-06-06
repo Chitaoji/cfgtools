@@ -82,7 +82,7 @@ def template(tpl: "DataObj", /) -> ConfigTemplate:
     Parameters
     ----------
     tpl : DataObj, optional
-        Config template, by default None.
+        Template data, by default None.
 
     Returns
     -------
