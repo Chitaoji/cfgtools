@@ -7,7 +7,7 @@ from faker import Faker
 from .core import config
 
 if TYPE_CHECKING:
-    from ._typing import ConfigIOWrapper
+    from .iowrapper import ConfigIOWrapper
 
 
 __all__ = ["ip_locations", "customer_data", "order_records"]

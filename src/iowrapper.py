@@ -45,7 +45,7 @@ FORMAT_MAPPING = {
 MAX_LINE_WIDTH = 88
 
 
-class ConfigIOWrapper(ConfigSaver):
+class ConfigTemplate(ConfigSaver):
     """
     A wrapper for reading and writing config files.
 
@@ -71,8 +71,8 @@ class ConfigIOWrapper(ConfigSaver):
     valid_types = (str, int, float, bool, NoneType)
     constructor = object
     sub_constructors = {
-        dict: lambda: _DictConfigIOWrapper,
-        list: lambda: _ListConfigIOWrapper,
+        dict: lambda: _DictConfigTemplate,
+        list: lambda: _ListConfigTemplate,
     }
     is_template = False
 
@@ -324,8 +324,8 @@ class ConfigIOWrapper(ConfigSaver):
         return f"config object of type {self.type().__name__}"
 
 
-class _DictConfigIOWrapper(ConfigIOWrapper):
-    constructor = ConfigIOWrapper
+class _DictConfigTemplate(ConfigTemplate):
+    constructor = ConfigTemplate
     sub_constructors = {}
 
     def __init__(self, obj: "DataObj", *args, **kwargs) -> None:
@@ -415,8 +415,8 @@ class _DictConfigIOWrapper(ConfigIOWrapper):
         return maker
 
 
-class _ListConfigIOWrapper(ConfigIOWrapper):
-    constructor = ConfigIOWrapper
+class _ListConfigTemplate(ConfigTemplate):
+    constructor = ConfigTemplate
     sub_constructors = {}
 
     def __init__(self, obj: "DataObj", *args, **kwargs) -> None:
@@ -502,25 +502,25 @@ def _sep(level: int) -> str:
     return "    " * level
 
 
-class ConfigTemplate(ConfigIOWrapper):
+class ConfigIOWrapper(ConfigTemplate):
     """A template for matching config objects."""
 
     valid_types = (str, int, float, bool, NoneType, type, Callable)
     constructor = object
     sub_constructors = {
-        dict: lambda: _DictConfigTemplate,
-        list: lambda: _ListConfigTemplate,
+        dict: lambda: _DictConfigIOWrapper,
+        list: lambda: _ListConfigIOWrapper,
     }
     is_template = True
 
 
-class _DictConfigTemplate(ConfigTemplate):
-    constructor = ConfigTemplate
+class _DictConfigIOWrapper(ConfigIOWrapper, _DictConfigTemplate):
+    constructor = ConfigIOWrapper
     sub_constructors = {}
 
 
-class _ListConfigTemplate(ConfigTemplate):
-    constructor = ConfigTemplate
+class _ListConfigIOWrapper(ConfigIOWrapper, _ListConfigTemplate):
+    constructor = ConfigIOWrapper
     sub_constructors = {}
 
 
