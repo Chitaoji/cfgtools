@@ -99,7 +99,8 @@ class ConfigTemplate:
     ) -> None:
         if isinstance(data, self.__class__):
             return
-        self.__obj = data
+        if not isinstance(data, (dict, list)):
+            self.__obj = data
         self.fileformat = fileformat
         self.overwrite_ok = True
         if path is None:
@@ -201,16 +202,12 @@ class ConfigTemplate:
         """Return an HTMLTreeMaker object for representing self."""
         return HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
 
-    def type(self) -> type["DataObj"]:
-        """Return the type of the unwrapped data"""
-        return self.__obj.__class__
-
     def get_max_line_width(self) -> int:
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
     def __desc(self) -> str:
-        return f"config object of type {self.type().__name__}"
+        return f"config object of type {self.unwrap_top_level().__class__.__name__}"
 
 
 class _DictConfigTemplate(ConfigTemplate):
