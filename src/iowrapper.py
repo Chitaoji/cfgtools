@@ -227,13 +227,17 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
         if not isinstance(t := template.unwrap_top_level(), dict):
             return None
 
-        newdata = {}
+        new_data = {}
         for k, v in t.items():
-            if k in self.keys() and self[k].match(v):
-                newdata[k] = self[k].copy()
+            if isinstance(k, Callable):
+                pass
+            elif isinstance(k, type):
+                pass
+            elif k in self.keys() and self[k].match(v):
+                new_data[k] = self[k].copy()
             else:
                 return None
-        return self.constructor(newdata)
+        return self.constructor(new_data)
 
 
 class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
@@ -251,10 +255,10 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
         if not isinstance(t := template.unwrap_top_level(), list):
             return None
 
-        newdata = []
+        new_data = []
         for x in t:
             if x in self:
-                newdata.append(x.copy())
+                new_data.append(x.copy())
 
         return self
 

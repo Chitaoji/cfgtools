@@ -66,10 +66,10 @@ class ConfigTemplate:
         if not isinstance(data, (dict, list)):
             self.__obj = data
 
-    def __getitem__(self, __key: "BasicObj") -> Self:
+    def __getitem__(self, key: "BasicObj", /) -> Self:
         raise TypeError(f"{self.__desc()} is not subscriptable")
 
-    def __setitem__(self, __key: "BasicObj", __value: "DataObj") -> None:
+    def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
         raise TypeError(f"{self.__desc()} does not support item assignment")
 
     def __repr__(self) -> str:
@@ -195,14 +195,14 @@ class DictConfigTemplate(ConfigTemplate):
                 new_obj[k] = self.constructor(v)
         self.__obj = new_obj
 
-    def __getitem__(self, __key: "BasicObj") -> Self:
-        return self.__obj[__key]
+    def __getitem__(self, key: "BasicObj", /) -> Self:
+        return self.__obj[key]
 
-    def __setitem__(self, __key: "BasicObj", __value: "DataObj") -> None:
-        if isinstance(__value, self.constructor):
-            self.__obj[__key] = __value
+    def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
+        if isinstance(value, self.constructor):
+            self.__obj[key] = value
         else:
-            self.__obj[__key] = self.constructor(__value)
+            self.__obj[key] = self.constructor(value)
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
@@ -279,8 +279,8 @@ class ListConfigTemplate(ConfigTemplate):
                 new_obj.append(self.constructor(x))
         self.__obj = new_obj
 
-    def __getitem__(self, __key: int) -> Self:
-        return self.__obj[__key]
+    def __getitem__(self, key: int, /) -> Self:
+        return self.__obj[key]
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
