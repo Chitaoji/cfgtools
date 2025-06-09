@@ -6,7 +6,6 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
-from itertools import zip_longest
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Self
 
@@ -140,7 +139,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         """Unlock the original path so that it can be overwritten."""
         self.overwrite_ok = True
 
-    def fullmatch(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -148,12 +147,12 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             pass
         elif isinstance(t, type):
             if isinstance(self.unwrap_top_level(), t):
-                return self
+                return self.copy()
         elif isinstance(t, Callable):
             if t(self.unwrap_top_level()):
-                return self
+                return self.copy()
         elif self.unwrap_top_level() == t:
-            return self
+            return self.copy()
         return None
 
     def save(
@@ -219,22 +218,22 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def fullmatch(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
-        if matched := super().fullmatch(template):
+        if matched := super().match(template):
             return matched
 
         if not isinstance(t := template.unwrap_top_level(), dict):
             return None
 
-        for i1, i2 in zip_longest(self.items(), t.items(), fillvalue=(None, None)):
-            k1, v1 = i1
-            k2, v2 = i2
-            if not (ConfigIOWrapper(k1).fullmatch(k2) and v1.fullmatch(v2)):
+        newdata = {}
+        for k, v in t.items():
+            if k in self.keys() and self[k].match(v):
+                newdata[k] = self[k].copy()
+            else:
                 return None
-
-        return self
+        return self.constructor(newdata)
 
 
 class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
@@ -243,19 +242,19 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def fullmatch(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
-        if matched := super().fullmatch(template):
+        if matched := super().match(template):
             return matched
 
         if not isinstance(t := template.unwrap_top_level(), list):
             return None
 
-        for i1, i2 in zip_longest(self, t, fillvalue=None):
-            i1: ConfigIOWrapper
-            if not i1.fullmatch(i2):
-                return None
+        newdata = []
+        for x in t:
+            if x in self:
+                newdata.append(x.copy())
 
         return self
 

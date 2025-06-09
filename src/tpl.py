@@ -129,6 +129,11 @@ class ConfigTemplate:
         """If the data is a list, extend it."""
         raise TypeError(f"{self.__desc()} has no method 'extend()'")
 
+    def copy(self) -> Self:
+        """Copy an instance of self."""
+        constructor = self.__class__ if self.constructor is object else self.constructor
+        return constructor(self.unwrap())
+
     def unwrap(self) -> "UnwrappedDataObj":
         """Returns the unwrapped data."""
         return self.__obj
@@ -164,7 +169,7 @@ class ConfigTemplate:
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
-    def fullmatch(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         """Match the whole template from the top level."""
         raise TypeError("can't match on a template")
 
