@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 NoneType = type(None)
 
-__all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "NEVER"]
+__all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER"]
 
 
 MAX_LINE_WIDTH = 88
@@ -39,6 +39,7 @@ class TemplateFlag:
 
 ANY = TemplateFlag("ANY")
 RETURN = TemplateFlag("RETURN")
+YIELD = TemplateFlag("YIELD")
 NEVER = TemplateFlag("NEVER")
 
 
@@ -214,6 +215,11 @@ class ConfigTemplate:
             self.__obj = lambda x: False
         elif self.__obj == RETURN:
             self.__obj = lambda x: bool(recorder.setdefault("RETURN", x)) or True
+        elif self.__obj == YIELD:
+            self.__obj = (
+                lambda x: bool(recorder.update(YIELD=recorder.get("YIELD", []) + [x]))
+                or True
+            )
         return recorder
 
     def __desc(self) -> str:

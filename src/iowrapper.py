@@ -7,7 +7,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Self
+from typing import TYPE_CHECKING, Callable, Iterator, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
@@ -139,7 +139,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         """Unlock the original path so that it can be overwritten."""
         self.overwrite_ok = True
 
-    def match(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | Iterator[Self] | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -227,7 +227,7 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def match(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | Iterator[Self] | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -249,7 +249,10 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
                 return None
 
         if recorder:
-            return recorder["RETURN"]
+            if "RETURN" in recorder:
+                return self.constructor(recorder["RETURN"])
+            if "YIELD" in recorder:
+                return (self.constructor(x) for x in recorder["YIELD"])
         return self.constructor(new_data)
 
     def search(self, template: "DataObj", /) -> Self | None:
@@ -267,7 +270,7 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def match(self, template: "DataObj", /) -> Self | None:
+    def match(self, template: "DataObj", /) -> Self | Iterator[Self] | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -289,7 +292,10 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
                 return None
 
         if recorder:
-            return recorder["RETURN"]
+            if "RETURN" in recorder:
+                return self.constructor(recorder["RETURN"])
+            if "YIELD" in recorder:
+                return (self.constructor(x) for x in recorder["YIELD"])
         return self.constructor(new_data)
 
     def search(self, template: "DataObj", /) -> Self | None:
