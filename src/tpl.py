@@ -188,8 +188,12 @@ class ConfigTemplate:
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
     def match(self, template: "DataObj", /) -> Self | None:
-        """Match the whole template from the top level."""
+        """Match the template from the top level."""
         raise TypeError("can't match on a template")
+
+    def search(self, template: "DataObj", /) -> Self | None:
+        """Search for the template at any level."""
+        raise TypeError("can't search on a template")
 
     def has_return_flags(self) -> bool:
         """Returns whether the template includes `RETURN` flags."""

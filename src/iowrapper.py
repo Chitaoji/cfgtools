@@ -169,6 +169,9 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             return self.copy()
         return None
 
+    def search(self, template: "DataObj", /) -> Self | None:
+        return self.match(template)
+
     def save(
         self,
         path: str | Path | None = None,
@@ -257,6 +260,14 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
                 return None
         return self.constructor(new_data)
 
+    def search(self, template: "DataObj", /) -> Self | None:
+        if matched := self.match(template):
+            return matched
+        for v in self.values():
+            if searched := v.search(template):
+                return searched
+        return None
+
 
 class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     """A wrapper for reading and writing config files."""
@@ -287,6 +298,14 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
                 return None
 
         return self.constructor(new_data)
+
+    def search(self, template: "DataObj", /) -> Self | None:
+        if matched := self.match(template):
+            return matched
+        for x in self:
+            if searched := x.search(template):
+                return searched
+        return None
 
 
 class FileFormatError(Exception):
