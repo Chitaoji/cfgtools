@@ -164,6 +164,14 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
     def search(self, template: "DataObj", /) -> Self | None:
         return self.match(template)
 
+    def has_flags(self) -> bool:
+        raise TypeError("this method is available only on templates")
+
+    def replace_flags(
+        self, recorder: dict[str, "DataObj"] | None = None, /
+    ) -> dict[str, "DataObj"]:
+        raise TypeError("this method is available only on templates")
+
     def save(
         self,
         path: str | Path | None = None,
