@@ -195,9 +195,26 @@ class ConfigTemplate:
         """Search for the template at any level."""
         raise TypeError("can't search on a template")
 
-    def has_return_flags(self) -> bool:
-        """Returns whether the template includes `RETURN` flags."""
-        return self.__obj == RETURN
+    def has_flags(self) -> bool:
+        """Returns whether the template includes template flags."""
+        return isinstance(self.__obj, TemplateFlag)
+
+    def replace_flags(
+        self, recorder: dict[str, "DataObj"] | None = None, /
+    ) -> dict[str, "DataObj"]:
+        """Replace all the template flags with callables."""
+        if recorder is None:
+            recorder = {}
+        if not isinstance(self.__obj, TemplateFlag):
+            return recorder
+
+        if self.__obj == ANY:
+            self.__obj = lambda x: True
+        elif self.__obj == NEVER:
+            self.__obj = lambda x: False
+        elif self.__obj == RETURN:
+            self.__obj = lambda x: bool(recorder.setdefault("RETURN", x)) or True
+        return recorder
 
     def __desc(self) -> str:
         return f"object of type {self.unwrap_top_level().__class__.__name__}"
@@ -288,8 +305,21 @@ class DictConfigTemplate(ConfigTemplate):
         maker.add("}", "t")
         return maker
 
-    def has_return_flags(self) -> bool:
-        return any(k == RETURN or v.has_return_flags() for k, v in self.items())
+    def has_flags(self) -> bool:
+        return any(
+            isinstance(k, TemplateFlag) or v.has_flags() for k, v in self.items()
+        )
+
+    def replace_flags(
+        self, recorder: dict[str, "DataObj"] | None = None, /
+    ) -> dict[str, "DataObj"]:
+        if recorder is None:
+            recorder = {}
+
+        for v in self.values():
+            v.replace_flags(recorder)
+
+        return recorder
 
 
 class ListConfigTemplate(ConfigTemplate):
@@ -369,8 +399,19 @@ class ListConfigTemplate(ConfigTemplate):
         maker.add("]", "t")
         return maker
 
-    def has_return_flags(self) -> bool:
-        return any(x.has_return_flags for x in self)
+    def has_flags(self) -> bool:
+        return any(isinstance(x, TemplateFlag) for x in self)
+
+    def replace_flags(
+        self, recorder: dict[str, "DataObj"] | None = None, /
+    ) -> dict[str, "DataObj"]:
+        if recorder is None:
+            recorder = {}
+
+        for x in self:
+            x.replace_flags(recorder)
+
+        return recorder
 
 
 def _sep(level: int) -> str:

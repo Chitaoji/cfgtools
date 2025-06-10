@@ -11,15 +11,7 @@ from typing import TYPE_CHECKING, Callable, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
-from .tpl import (
-    ANY,
-    NEVER,
-    RETURN,
-    ConfigTemplate,
-    DictConfigTemplate,
-    ListConfigTemplate,
-    TemplateFlag,
-)
+from .tpl import ConfigTemplate, DictConfigTemplate, ListConfigTemplate
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
@@ -76,7 +68,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
 
     """
 
-    valid_types = (str, int, float, bool, NoneType, TemplateFlag)
+    valid_types = str, int, float, bool, NoneType
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigIOWrapper,
@@ -150,6 +142,8 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
     def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
+
+        recorder = template.replace_flags()
         template = template.unwrap_top_level()
 
         if isinstance(template, (dict, list)):
@@ -160,13 +154,11 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         elif isinstance(template, Callable):
             if template(self.unwrap_top_level()):
                 return self.copy()
-        elif isinstance(template, TemplateFlag):
-            if template in (ANY, RETURN):
-                return self.copy()
-            if template == NEVER:
-                return None
         elif self.unwrap_top_level() == template:
             return self.copy()
+
+        if recorder:
+            return recorder["RETURN"]
         return None
 
     def search(self, template: "DataObj", /) -> Self | None:
@@ -238,11 +230,12 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
+
+        recorder = template.replace_flags()
         template = template.unwrap_top_level()
 
         if matched := super().match(template):
             return matched
-
         if not isinstance(template, dict):
             return None
 
@@ -250,14 +243,13 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
         for k, v in template.items():
             for kk, vv in self.items():
                 if self.constructor(kk).match(k) and (matched := vv.match(v)):
-                    if k == RETURN:
-                        return self.constructor(kk)
-                    if v.has_return_flags():
-                        return matched
                     new_data[kk] = matched
                     break
             else:
                 return None
+
+        if recorder:
+            return recorder["RETURN"]
         return self.constructor(new_data)
 
     def search(self, template: "DataObj", /) -> Self | None:
@@ -278,11 +270,12 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
+
+        recorder = template.replace_flags()
         template = template.unwrap_top_level()
 
         if matched := super().match(template):
             return matched
-
         if not isinstance(template, list):
             return None
 
@@ -290,13 +283,13 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
         for x in template:
             for xx in self:
                 if matched := xx.match(x):
-                    if x.has_return_flags():
-                        return matched
                     new_data.append(matched)
                     break
             else:
                 return None
 
+        if recorder:
+            return recorder["RETURN"]
         return self.constructor(new_data)
 
     def search(self, template: "DataObj", /) -> Self | None:
