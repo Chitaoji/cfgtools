@@ -9,11 +9,11 @@ from typing import Callable, Literal
 
 import loggings
 
-from .tpl import ConfigTemplate
+from .tpl import ConfigTemplate, TemplateFlag
 
 loggings.warning("this module is not intended to be imported at runtime")
 
-BasicObj = str | int | float | bool | None | type | Callable
+BasicObj = str | int | float | bool | None | type | Callable | TemplateFlag
 UnwrappedDataObj = (
     dict[BasicObj, "UnwrappedDataObj"] | list["UnwrappedDataObj"] | BasicObj
 )

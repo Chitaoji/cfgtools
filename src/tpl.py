@@ -18,10 +18,28 @@ if TYPE_CHECKING:
 
 NoneType = type(None)
 
-__all__ = ["MAX_LINE_WIDTH"]
+__all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "NEVER"]
 
 
 MAX_LINE_WIDTH = 88
+
+
+class TemplateFlag:
+    """Template flag."""
+
+    def __init__(self, name: str, /) -> None:
+        self.name = name
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, value: Self, /) -> bool:
+        return isinstance(value, self.__class__) and self.name == value.name
+
+
+ANY = TemplateFlag("ANY")
+RETURN = TemplateFlag("RETURN")
+NEVER = TemplateFlag("NEVER")
 
 
 class ConfigTemplate:
@@ -40,7 +58,7 @@ class ConfigTemplate:
 
     """
 
-    valid_types = (str, int, float, bool, NoneType, type, Callable)
+    valid_types = (str, int, float, bool, NoneType, type, Callable, TemplateFlag)
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigTemplate,
@@ -173,6 +191,10 @@ class ConfigTemplate:
         """Match the whole template from the top level."""
         raise TypeError("can't match on a template")
 
+    def has_return_flags(self) -> bool:
+        """Returns whether the template includes `RETURN` flags."""
+        return self.__obj == RETURN
+
     def __desc(self) -> str:
         return f"object of type {self.unwrap_top_level().__class__.__name__}"
 
@@ -262,6 +284,9 @@ class DictConfigTemplate(ConfigTemplate):
         maker.add("}", "t")
         return maker
 
+    def has_return_flags(self) -> bool:
+        return any(k == RETURN or v.has_return_flags() for k, v in self.items())
+
 
 class ListConfigTemplate(ConfigTemplate):
     """Template of list."""
@@ -339,6 +364,9 @@ class ListConfigTemplate(ConfigTemplate):
             maker.add(node)
         maker.add("]", "t")
         return maker
+
+    def has_return_flags(self) -> bool:
+        return any(x.has_return_flags for x in self)
 
 
 def _sep(level: int) -> str:

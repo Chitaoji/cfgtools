@@ -11,7 +11,15 @@ from typing import TYPE_CHECKING, Callable, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
-from .tpl import ConfigTemplate, DictConfigTemplate, ListConfigTemplate
+from .tpl import (
+    ANY,
+    NEVER,
+    RETURN,
+    ConfigTemplate,
+    DictConfigTemplate,
+    ListConfigTemplate,
+    TemplateFlag,
+)
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
@@ -68,7 +76,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
 
     """
 
-    valid_types = (str, int, float, bool, NoneType)
+    valid_types = (str, int, float, bool, NoneType, TemplateFlag)
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigIOWrapper,
@@ -142,16 +150,22 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
     def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
+        template = template.unwrap_top_level()
 
-        if isinstance(t := template.unwrap_top_level(), (dict, list)):
+        if isinstance(template, (dict, list)):
             pass
-        elif isinstance(t, type):
-            if isinstance(self.unwrap_top_level(), t):
+        elif isinstance(template, type):
+            if isinstance(self.unwrap_top_level(), template):
                 return self.copy()
-        elif isinstance(t, Callable):
-            if t(self.unwrap_top_level()):
+        elif isinstance(template, Callable):
+            if template(self.unwrap_top_level()):
                 return self.copy()
-        elif self.unwrap_top_level() == t:
+        elif isinstance(template, TemplateFlag):
+            if template in (ANY, RETURN):
+                return self.copy()
+            if template == NEVER:
+                return None
+        elif self.unwrap_top_level() == template:
             return self.copy()
         return None
 
@@ -221,20 +235,24 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
+        template = template.unwrap_top_level()
+
         if matched := super().match(template):
             return matched
 
-        if not isinstance(t := template.unwrap_top_level(), dict):
+        if not isinstance(template, dict):
             return None
 
         new_data = {}
-        for k, v in t.items():
-            if isinstance(k, Callable):
-                pass
-            elif isinstance(k, type):
-                pass
-            elif k in self.keys() and self[k].match(v):
-                new_data[k] = self[k].copy()
+        for k, v in template.items():
+            for kk, vv in self.items():
+                if self.constructor(kk).match(k) and (matched := vv.match(v)):
+                    if k == RETURN:
+                        return self.constructor(kk)
+                    if v.has_return_flags():
+                        return matched
+                    new_data[kk] = matched
+                    break
             else:
                 return None
         return self.constructor(new_data)
@@ -249,18 +267,26 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
+        template = template.unwrap_top_level()
+
         if matched := super().match(template):
             return matched
 
-        if not isinstance(t := template.unwrap_top_level(), list):
+        if not isinstance(template, list):
             return None
 
         new_data = []
-        for x in t:
-            if x in self:
-                new_data.append(x.copy())
+        for x in template:
+            for xx in self:
+                if matched := xx.match(x):
+                    if x.has_return_flags():
+                        return matched
+                    new_data.append(matched)
+                    break
+            else:
+                return None
 
-        return self
+        return self.constructor(new_data)
 
 
 class FileFormatError(Exception):
