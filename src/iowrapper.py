@@ -139,7 +139,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         """Unlock the original path so that it can be overwritten."""
         self.overwrite_ok = True
 
-    def match(self, template: "DataObj", /) -> Self | Iterator[Self] | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -227,7 +227,7 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def match(self, template: "DataObj", /) -> Self | Iterator[Self] | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -252,7 +252,7 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
             if "RETURN" in recorder:
                 return self.constructor(recorder["RETURN"])
             if "YIELD" in recorder:
-                return (self.constructor(x) for x in recorder["YIELD"])
+                return self.constructor(recorder["YIELD"])
         return self.constructor(new_data)
 
     def search(self, template: "DataObj", /) -> Self | None:
@@ -270,7 +270,7 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     constructor = ConfigIOWrapper
     sub_constructors = {}
 
-    def match(self, template: "DataObj", /) -> Self | Iterator[Self] | None:
+    def match(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
@@ -295,7 +295,7 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
             if "RETURN" in recorder:
                 return self.constructor(recorder["RETURN"])
             if "YIELD" in recorder:
-                return (self.constructor(x) for x in recorder["YIELD"])
+                return self.constructor(recorder["YIELD"])
         return self.constructor(new_data)
 
     def search(self, template: "DataObj", /) -> Self | None:
