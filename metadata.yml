@@ -1,12 +1,15 @@
 # Package meta-data.
 NAME: cfgtools
 VERSION:
-SUMMARY: A template repository for building python packages.
-HOMEPAGE: https://github.com/Chitaoji/$package/
+SUMMARY: Provides tools for managing config files.
+HOMEPAGE: https://github.com/Chitaoji/cfgtools/
 AUTHOR: Chitaoji
 AUTHOR_EMAIL: 2360742040@qq.com
-REQUIRES_PYTHON: ">=3.8.13"
-REQUIRES: []
+REQUIRES_PYTHON: ">=3.12.7"
+REQUIRES: 
+  - pyyaml
+  - lazyr
+  - Faker
 EXTRAS: {}
 SOURCE: src
 SUBMODULES: []
@@ -16,8 +19,4 @@ CLASSIFIERS:
   - "License :: OSI Approved :: BSD License"
   - "Programming Language :: Python"
   - "Programming Language :: Python :: 3"
-  - "Programming Language :: Python :: 3.8"
-  - "Programming Language :: Python :: 3.9"
-  - "Programming Language :: Python :: 3.10"
-  - "Programming Language :: Python :: 3.11"
   - "Programming Language :: Python :: 3.12"

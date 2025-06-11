@@ -1,14 +1,23 @@
 """
 Contains typing classes.
 
-NOTE: this module is private. All functions and objects are available in the main
-`$package` namespace - use that instead.
+NOTE: this module is not intended to be imported at runtime.
 
 """
 
-import logging
+from typing import Callable, Literal
 
-logging.warning(
-    "importing from '._typing' - this module is not intended for direct import, "
-    "therefore unexpected errors may occur"
+import loggings
+
+from .tpl import ConfigTemplate, TemplateFlag
+
+loggings.warning("this module is not intended to be imported at runtime")
+
+BasicObj = str | int | float | bool | None | type | Callable | TemplateFlag
+UnwrappedDataObj = (
+    dict[BasicObj, "UnwrappedDataObj"] | list["UnwrappedDataObj"] | BasicObj
 )
+DataObj = dict[BasicObj, "DataObj"] | list["DataObj"] | BasicObj | ConfigTemplate
+ConfigFileFormat = Literal[
+    "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
+]
