@@ -140,21 +140,23 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         self.overwrite_ok = True
 
     def match(self, template: "DataObj", /) -> Self | None:
-        if not isinstance(template, ConfigTemplate):
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        template = template.unwrap_top_level()
+        unwrapped = template.unwrap_top_level()
 
-        if isinstance(template, (dict, list)):
+        if isinstance(unwrapped, (dict, list)):
             pass
-        elif isinstance(template, type):
-            if isinstance(self.unwrap_top_level(), template):
+        elif isinstance(unwrapped, type):
+            if isinstance(self.unwrap_top_level(), unwrapped):
                 return self.copy()
-        elif isinstance(template, Callable):
-            if template(self.unwrap_top_level()):
+        elif isinstance(unwrapped, Callable):
+            if unwrapped(self.unwrap_top_level()):
                 return self.copy()
-        elif self.unwrap_top_level() == template:
+        elif self.unwrap_top_level() == unwrapped:
             return self.copy()
 
         if recorder:
@@ -162,18 +164,20 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         return None
 
     def fullmatch(self, template: "DataObj", /) -> Self | None:
-        return self.match(template)
+        if (matched := self.match(template)).unwrap() == self.unwrap():
+            return matched
+        return None
 
     def search(self, template: "DataObj", /) -> Self | None:
         return self.match(template)
 
     def has_flags(self) -> bool:
-        raise TypeError("this method is available only on templates")
+        raise TypeError("method has_flags() is available only on templates")
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
     ) -> dict[str, "DataObj"]:
-        raise TypeError("this method is available only on templates")
+        raise TypeError("method replace_flags() is available only on templates")
 
     def save(
         self,
@@ -239,47 +243,20 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     sub_constructors = {}
 
     def match(self, template: "DataObj", /) -> Self | None:
-        if not isinstance(template, ConfigTemplate):
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        template = template.unwrap_top_level()
-
-        if matched := super().match(template):
-            return matched
-        if not isinstance(template, dict):
+        unwrapped = template.unwrap_top_level()
+        if not isinstance(unwrapped, dict):
             return None
+        if matched := super().match(unwrapped):
+            return matched
 
         new_data = {}
-        for k, v in template.items():
-            for kk, vv in self.items():
-                if self.constructor(kk).match(k) and (matched := vv.match(v)):
-                    new_data[kk] = matched
-                    break
-            else:
-                return None
-
-        if recorder:
-            if "RETURN" in recorder:
-                return self.constructor(recorder["RETURN"])
-            if "YIELD" in recorder:
-                return self.constructor(recorder["YIELD"])
-        return self.constructor(new_data)
-
-    def fullmatch(self, template: "DataObj", /) -> Self | None:
-        if not isinstance(template, ConfigTemplate):
-            template = ConfigTemplate(template)
-
-        recorder = template.replace_flags()
-        template = template.unwrap_top_level()
-
-        if matched := super().match(template):
-            return matched
-        if not isinstance(template, dict):
-            return None
-
-        new_data = {}
-        for k, v in template.items():
+        for k, v in unwrapped.items():
             for kk, vv in self.items():
                 if self.constructor(kk).match(k) and (matched := vv.match(v)):
                     new_data[kk] = matched
@@ -310,19 +287,20 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
     sub_constructors = {}
 
     def match(self, template: "DataObj", /) -> Self | None:
-        if not isinstance(template, ConfigTemplate):
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        template = template.unwrap_top_level()
-
-        if matched := super().match(template):
-            return matched
-        if not isinstance(template, list):
+        unwrapped = template.unwrap_top_level()
+        if not isinstance(unwrapped, list):
             return None
+        if matched := super().match(unwrapped):
+            return matched
 
         new_data = []
-        for x in template:
+        for x in unwrapped:
             for xx in self:
                 if matched := xx.match(x):
                     new_data.append(matched)

@@ -8,7 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import sys
-from typing import TYPE_CHECKING, Callable, Iterable, Self
+from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self
 
 from .css import TREE_CSS_STYLE
 from .utils.htmltree import HTMLTreeMaker
@@ -116,7 +116,7 @@ class ConfigTemplate:
     def __contains__(self, key: "BasicObj", /) -> bool:
         raise TypeError(f"{self.__desc()} is not iterable")
 
-    def __iter__(self) -> Iterable["DataObj"]:
+    def __iter__(self) -> Iterator["DataObj"]:
         raise TypeError(f"{self.__desc()} is not iterable")
 
     def __bool__(self) -> bool:
@@ -275,7 +275,7 @@ class DictConfigTemplate(ConfigTemplate):
     def __contains__(self, key: "BasicObj", /) -> bool:
         return key in self.__obj
 
-    def __iter__(self) -> Iterable["DataObj"]:
+    def __iter__(self) -> Iterator["DataObj"]:
         return iter(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
@@ -378,7 +378,7 @@ class ListConfigTemplate(ConfigTemplate):
     def __contains__(self, key: "BasicObj", /) -> bool:
         return key in self.__obj
 
-    def __iter__(self) -> Iterable["DataObj"]:
+    def __iter__(self) -> Iterator["DataObj"]:
         return iter(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
