@@ -76,7 +76,7 @@ class ConfigTemplate:
         elif isinstance(data, cls.valid_types):
             new_class = cls
         else:
-            raise TypeError(f"invalid type of data: {data.__class__.__name__}")
+            raise TypeError(f"invalid type of data: {data.__class__.__name__!r}")
         return cls.constructor.__new__(new_class)
 
     def __init__(self, data: "DataObj") -> None:
@@ -110,6 +110,9 @@ class ConfigTemplate:
             return flat
         return self.repr()
 
+    def __len__(self) -> int:
+        raise TypeError(f"{self.__desc()} has no len()")
+
     def repr(self, level: int = 0, /) -> str:
         """
         Represent self.
@@ -134,19 +137,19 @@ class ConfigTemplate:
 
     def values(self) -> "Iterable[ConfigTemplate]":
         """If the data is a mapping, provide a view of its wrapped values."""
-        raise TypeError(f"{self.__desc()} has no method 'values()'")
+        raise TypeError(f"{self.__desc()} has no method values()")
 
     def items(self) -> Iterable[tuple["BasicObj", "ConfigTemplate"]]:
         """If the data is a mapping, provide a view of its wrapped items."""
-        raise TypeError(f"{self.__desc()} has no method 'items()'")
+        raise TypeError(f"{self.__desc()} has no method items()")
 
     def append(self, __object: "DataObj") -> None:
         """If the data is a list, append to its end."""
-        raise TypeError(f"{self.__desc()} has no method 'append()'")
+        raise TypeError(f"{self.__desc()} has no method append()")
 
     def extend(self, __object: "Iterable[DataObj]") -> None:
         """If the data is a list, extend it."""
-        raise TypeError(f"{self.__desc()} has no method 'extend()'")
+        raise TypeError(f"{self.__desc()} has no method extend()")
 
     def copy(self) -> Self:
         """Copy an instance of self."""
@@ -192,6 +195,10 @@ class ConfigTemplate:
         """Match the template from the top level."""
         raise TypeError("can't match on a template")
 
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
+        """Match the whole template from the top level."""
+        raise TypeError("can't match on a template")
+
     def search(self, template: "DataObj", /) -> Self | None:
         """Search for the template at any level."""
         raise TypeError("can't search on a template")
@@ -223,7 +230,7 @@ class ConfigTemplate:
         return recorder
 
     def __desc(self) -> str:
-        return f"object of type {self.unwrap_top_level().__class__.__name__}"
+        return f"config object of type {self.unwrap_top_level().__class__.__name__!r}"
 
 
 class DictConfigTemplate(ConfigTemplate):
@@ -237,7 +244,7 @@ class DictConfigTemplate(ConfigTemplate):
         new_obj: dict["BasicObj", "DataObj"] = {}
         for k, v in obj.items():
             if not isinstance(k, self.valid_types):
-                raise TypeError(f"invalid type of key: {k.__class__.__name__}")
+                raise TypeError(f"invalid type of key: {k.__class__.__name__!r}")
             if isinstance(v, self.constructor):
                 new_obj[k] = v
             else:
@@ -252,6 +259,9 @@ class DictConfigTemplate(ConfigTemplate):
             self.__obj[key] = value
         else:
             self.__obj[key] = self.constructor(value)
+
+    def __len__(self) -> int:
+        return len(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
@@ -346,6 +356,9 @@ class ListConfigTemplate(ConfigTemplate):
 
     def __getitem__(self, key: int, /) -> Self:
         return self.__obj[key]
+
+    def __len__(self) -> int:
+        return len(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)

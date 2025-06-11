@@ -161,6 +161,9 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             return recorder["RETURN"]
         return None
 
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
+        return self.match(template)
+
     def search(self, template: "DataObj", /) -> Self | None:
         return self.match(template)
 
@@ -236,6 +239,34 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     sub_constructors = {}
 
     def match(self, template: "DataObj", /) -> Self | None:
+        if not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+
+        recorder = template.replace_flags()
+        template = template.unwrap_top_level()
+
+        if matched := super().match(template):
+            return matched
+        if not isinstance(template, dict):
+            return None
+
+        new_data = {}
+        for k, v in template.items():
+            for kk, vv in self.items():
+                if self.constructor(kk).match(k) and (matched := vv.match(v)):
+                    new_data[kk] = matched
+                    break
+            else:
+                return None
+
+        if recorder:
+            if "RETURN" in recorder:
+                return self.constructor(recorder["RETURN"])
+            if "YIELD" in recorder:
+                return self.constructor(recorder["YIELD"])
+        return self.constructor(new_data)
+
+    def fullmatch(self, template: "DataObj", /) -> Self | None:
         if not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
