@@ -108,6 +108,13 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         self.unlock()
         self.save()
 
+    def __repr__(self) -> str:
+        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+            s = flat
+        else:
+            s = self.repr()
+        return f"cfgtools.config({s})"
+
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         maker = self.to_html()
         maker.setcls("t")
