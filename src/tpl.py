@@ -113,6 +113,12 @@ class ConfigTemplate:
     def __len__(self) -> int:
         raise TypeError(f"{self.__desc()} has no len()")
 
+    def __contains__(self, key: "BasicObj", /) -> bool:
+        raise TypeError(f"{self.__desc()} is not iterable")
+
+    def __iter__(self) -> Iterable["DataObj"]:
+        raise TypeError(f"{self.__desc()} is not iterable")
+
     def repr(self, level: int = 0, /) -> str:
         """
         Represent self.
@@ -263,6 +269,12 @@ class DictConfigTemplate(ConfigTemplate):
     def __len__(self) -> int:
         return len(self.__obj)
 
+    def __contains__(self, key: "BasicObj", /) -> bool:
+        return key in self.__obj
+
+    def __iter__(self) -> Iterable["DataObj"]:
+        return iter(self.__obj)
+
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
         string = "{\n"
@@ -359,6 +371,12 @@ class ListConfigTemplate(ConfigTemplate):
 
     def __len__(self) -> int:
         return len(self.__obj)
+
+    def __contains__(self, key: "BasicObj", /) -> bool:
+        return key in self.__obj
+
+    def __iter__(self) -> Iterable["DataObj"]:
+        return iter(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
