@@ -119,6 +119,9 @@ class ConfigTemplate:
     def __iter__(self) -> Iterable["DataObj"]:
         raise TypeError(f"{self.__desc()} is not iterable")
 
+    def __bool__(self) -> bool:
+        return True
+
     def repr(self, level: int = 0, /) -> str:
         """
         Represent self.
