@@ -42,6 +42,7 @@ ANY = TemplateFlag("ANY")
 RETURN = TemplateFlag("RETURN")
 YIELD = TemplateFlag("YIELD")
 NEVER = TemplateFlag("NEVER")
+FIXED_TRUE = TemplateFlag("FIXED_TRUE")
 
 
 class ConfigTemplate:
@@ -226,9 +227,19 @@ class ConfigTemplate:
         """Search for the template at any level."""
         raise TypeError("can't search on a template")
 
-    def fill(self, wrapper: "ConfigIOWrapper") -> "ConfigIOWrapper":
+    def fill(self, wrapper: "ConfigIOWrapper" | None = None) -> "ConfigIOWrapper":
         """Fill the template with an iowrapper."""
-        pass
+        if isinstance(self.__obj, type):
+            if wrapper is not None and isinstance(
+                wrapper.unwrap_top_level(), self.__obj
+            ):
+                return wrapper.copy()
+            return self.__obj()
+        if isinstance(self.__obj, Callable):
+            if wrapper is not None and self.__obj(wrapper):
+                return wrapper.copy()
+            return FIXED_TRUE
+        return self.copy()
 
     def has_flag(self, flag: TemplateFlag, /) -> bool:
         """Returns whether the template includes template flags."""
@@ -353,6 +364,10 @@ class DictConfigTemplate(ConfigTemplate):
             maker.add(node)
         maker.add("}", "t")
         return maker
+
+    def fill(self, wrapper: "ConfigIOWrapper" | None = None) -> "ConfigIOWrapper":
+        if not isinstance(wrapper.unwrap_top_level(), dict):
+            return wrapper.__class__({k: v.fill() for k, v in self.items()})
 
     def has_flag(self, flag: TemplateFlag, /) -> bool:
         return any(k == flag or v.has_flag(flag) for k, v in self.items())

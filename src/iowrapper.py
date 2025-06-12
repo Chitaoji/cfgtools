@@ -168,7 +168,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             if isinstance(self.unwrap_top_level(), unwrapped):
                 return self.copy()
         elif isinstance(unwrapped, Callable):
-            if unwrapped(self.unwrap_top_level()):
+            if unwrapped(self):
                 return self.copy()
         elif self.unwrap_top_level() == unwrapped:
             return self.copy()
@@ -193,6 +193,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         if template.has_flag(YIELD):
             raise ValueError("'YIELD' tags are not supported in safematch()")
 
+        template.replace_flags()
         return template.fill(self)
 
     def search(self, template: "DataObj", /) -> Self | None:
