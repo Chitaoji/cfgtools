@@ -227,7 +227,7 @@ class ConfigTemplate:
         """Search for the template at any level."""
         raise TypeError("can't search on a template")
 
-    def fill(self, wrapper: "ConfigIOWrapper" | None = None) -> "ConfigIOWrapper":
+    def fill(self, wrapper: "ConfigIOWrapper | None" = None) -> "ConfigIOWrapper":
         """Fill the template with an iowrapper."""
         if isinstance(self.__obj, type):
             if wrapper is not None and isinstance(
@@ -365,7 +365,7 @@ class DictConfigTemplate(ConfigTemplate):
         maker.add("}", "t")
         return maker
 
-    def fill(self, wrapper: "ConfigIOWrapper" | None = None) -> "ConfigIOWrapper":
+    def fill(self, wrapper: "ConfigIOWrapper | None" = None) -> "ConfigIOWrapper":
         if not isinstance(wrapper.unwrap_top_level(), dict):
             return wrapper.__class__({k: v.fill() for k, v in self.items()})
 
