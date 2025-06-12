@@ -15,6 +15,7 @@ from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
     from ._typing import BasicObj, DataObj, UnwrappedDataObj
+    from .iowrapper import ConfigIOWrapper
 
 NoneType = type(None)
 
@@ -208,13 +209,30 @@ class ConfigTemplate:
         """Match the whole template from the top level."""
         raise TypeError("can't match on a template")
 
+    def safematch(self, template: "DataObj", /) -> Self:
+        """
+        Match the whole template from the top level. Differences to
+        `self.fullmatch()` that the result will always be an instance
+        of self, and will meet `self.safematch(template).fullmatch(template)
+        == self.safematch(template)`.
+
+        NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
+        method.
+
+        """
+        raise TypeError("can't match on a template")
+
     def search(self, template: "DataObj", /) -> Self | None:
         """Search for the template at any level."""
         raise TypeError("can't search on a template")
 
-    def has_flags(self) -> bool:
+    def fill(self, wrapper: "ConfigIOWrapper") -> "ConfigIOWrapper":
+        """Fill the template with an iowrapper."""
+        pass
+
+    def has_flag(self, flag: TemplateFlag, /) -> bool:
         """Returns whether the template includes template flags."""
-        return isinstance(self.__obj, TemplateFlag)
+        return self.__obj == flag
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -336,10 +354,8 @@ class DictConfigTemplate(ConfigTemplate):
         maker.add("}", "t")
         return maker
 
-    def has_flags(self) -> bool:
-        return any(
-            isinstance(k, TemplateFlag) or v.has_flags() for k, v in self.items()
-        )
+    def has_flag(self, flag: TemplateFlag, /) -> bool:
+        return any(k == flag or v.has_flag(flag) for k, v in self.items())
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -439,8 +455,8 @@ class ListConfigTemplate(ConfigTemplate):
         maker.add("]", "t")
         return maker
 
-    def has_flags(self) -> bool:
-        return any(isinstance(x, TemplateFlag) for x in self)
+    def has_flag(self, flag: TemplateFlag, /) -> bool:
+        return any(x == flag for x in self)
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /

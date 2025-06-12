@@ -11,7 +11,14 @@ from typing import TYPE_CHECKING, Callable, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
-from .tpl import ConfigTemplate, DictConfigTemplate, ListConfigTemplate
+from .tpl import (
+    RETURN,
+    YIELD,
+    ConfigTemplate,
+    DictConfigTemplate,
+    ListConfigTemplate,
+    TemplateFlag,
+)
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
@@ -156,8 +163,8 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         unwrapped = template.unwrap_top_level()
 
         if isinstance(unwrapped, (dict, list)):
-            pass
-        elif isinstance(unwrapped, type):
+            return None
+        if isinstance(unwrapped, type):
             if isinstance(self.unwrap_top_level(), unwrapped):
                 return self.copy()
         elif isinstance(unwrapped, Callable):
@@ -175,11 +182,24 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             return matched
         return None
 
+    def safematch(self, template: "DataObj", /) -> Self | None:
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+
+        if template.has_flag(RETURN):
+            raise ValueError("'RETURN' tags are not supported in safematch()")
+        if template.has_flag(YIELD):
+            raise ValueError("'YIELD' tags are not supported in safematch()")
+
+        return template.fill(self)
+
     def search(self, template: "DataObj", /) -> Self | None:
         return self.match(template)
 
-    def has_flags(self) -> bool:
-        raise TypeError("method has_flags() is available only on templates")
+    def has_flag(self, flag: TemplateFlag, /) -> bool:
+        raise TypeError("method has_flag() is available only on templates")
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -257,10 +277,11 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
 
         recorder = template.replace_flags()
         unwrapped = template.unwrap_top_level()
-        if not isinstance(unwrapped, dict):
-            return None
+
         if matched := super().match(unwrapped):
             return matched
+        if not isinstance(unwrapped, dict):
+            return None
 
         new_data = {}
         for k, v in unwrapped.items():
@@ -301,10 +322,11 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
 
         recorder = template.replace_flags()
         unwrapped = template.unwrap_top_level()
-        if not isinstance(unwrapped, list):
-            return None
+
         if matched := super().match(unwrapped):
             return matched
+        if not isinstance(unwrapped, list):
+            return None
 
         new_data = []
         for x in unwrapped:
