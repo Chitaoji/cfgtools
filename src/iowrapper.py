@@ -12,12 +12,13 @@ from typing import TYPE_CHECKING, Callable, Self
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
 from .tpl import (
+    FIXED_POINT,
     RETURN,
     YIELD,
     ConfigTemplate,
     DictConfigTemplate,
+    Flag,
     ListConfigTemplate,
-    TemplateFlag,
 )
 from .utils.htmltree import HTMLTreeMaker
 
@@ -75,7 +76,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
 
     """
 
-    valid_types = str, int, float, bool, NoneType
+    valid_types = str, int, float, bool, NoneType, Flag
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigIOWrapper,
@@ -90,6 +91,9 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
+        if isinstance(data, Flag):
+            if not data == FIXED_POINT:
+                raise ValueError(f"invalid data: {data}")
         super().__init__(data)
         self.fileformat = fileformat
         self.overwrite_ok = True
@@ -178,7 +182,19 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         return None
 
     def fullmatch(self, template: "DataObj", /) -> Self | None:
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+
+        recorder = template.replace_flags()
+
         if (matched := self.match(template)).unwrap() == self.unwrap():
+            if recorder:
+                if "RETURN" in recorder:
+                    return ConfigIOWrapper(recorder["RETURN"])
+                if "YIELD" in recorder:
+                    return ConfigIOWrapper(recorder["YIELD"])
             return matched
         return None
 
@@ -194,12 +210,12 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             raise ValueError("'YIELD' tags are not supported in safematch()")
 
         template.replace_flags()
-        return template.fill(self)
+        return template.fill(ConfigIOWrapper, self)
 
     def search(self, template: "DataObj", /) -> Self | None:
         return self.match(template)
 
-    def has_flag(self, flag: TemplateFlag, /) -> bool:
+    def has_flag(self, flag: Flag, /) -> bool:
         raise TypeError("method has_flag() is available only on templates")
 
     def replace_flags(
@@ -285,10 +301,10 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
             return None
 
         new_data = {}
-        for k, v in unwrapped.items():
-            for kk, vv in self.items():
-                if self.constructor(kk).match(k) and (matched := vv.match(v)):
-                    new_data[kk] = matched
+        for kt, vt in unwrapped.items():
+            for k, v in self.items():
+                if self.constructor(k).match(kt) and (matched := v.match(vt)):
+                    new_data[k] = matched
                     break
             else:
                 return None
@@ -330,9 +346,9 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
             return None
 
         new_data = []
-        for x in unwrapped:
-            for xx in self:
-                if matched := xx.match(x):
+        for xt in unwrapped:
+            for x in self:
+                if matched := x.match(xt):
                     new_data.append(matched)
                     break
             else:
