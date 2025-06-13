@@ -11,7 +11,14 @@ from typing import TYPE_CHECKING, Callable, Self
 
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
-from .tpl import ConfigTemplate, DictConfigTemplate, ListConfigTemplate
+from .tpl import (
+    RETURN,
+    YIELD,
+    ConfigTemplate,
+    DictConfigTemplate,
+    Flag,
+    ListConfigTemplate,
+)
 from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
@@ -156,12 +163,12 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         unwrapped = template.unwrap_top_level()
 
         if isinstance(unwrapped, (dict, list)):
-            pass
-        elif isinstance(unwrapped, type):
+            return None
+        if isinstance(unwrapped, type):
             if isinstance(self.unwrap_top_level(), unwrapped):
                 return self.copy()
         elif isinstance(unwrapped, Callable):
-            if unwrapped(self.unwrap_top_level()):
+            if unwrapped(self):
                 return self.copy()
         elif self.unwrap_top_level() == unwrapped:
             return self.copy()
@@ -171,15 +178,43 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         return None
 
     def fullmatch(self, template: "DataObj", /) -> Self | None:
-        if (matched := self.match(template)).unwrap() == self.unwrap():
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+
+        recorder = template.replace_flags()
+
+        if (
+            matched := self.match(template)
+        ) is not None and matched.unwrap() == self.unwrap():
+            if recorder:
+                if "RETURN" in recorder:
+                    return ConfigIOWrapper(recorder["RETURN"])
+                if "YIELD" in recorder:
+                    return ConfigIOWrapper(recorder["YIELD"])
             return matched
         return None
+
+    def safematch(self, template: "DataObj", /) -> Self | None:
+        if isinstance(template, ConfigIOWrapper):
+            template = ConfigTemplate(template.unwrap())
+        elif not isinstance(template, ConfigTemplate):
+            template = ConfigTemplate(template)
+
+        if template.has_flag(RETURN):
+            raise ValueError("'RETURN' tags are not supported in safematch()")
+        if template.has_flag(YIELD):
+            raise ValueError("'YIELD' tags are not supported in safematch()")
+
+        template.replace_flags()
+        return template.fill(ConfigIOWrapper, self)
 
     def search(self, template: "DataObj", /) -> Self | None:
         return self.match(template)
 
-    def has_flags(self) -> bool:
-        raise TypeError("method has_flags() is available only on templates")
+    def has_flag(self, flag: Flag, /) -> bool:
+        raise TypeError("method has_flag() is available only on templates")
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -257,16 +292,17 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
 
         recorder = template.replace_flags()
         unwrapped = template.unwrap_top_level()
-        if not isinstance(unwrapped, dict):
-            return None
+
         if matched := super().match(unwrapped):
             return matched
+        if not isinstance(unwrapped, dict):
+            return None
 
         new_data = {}
-        for k, v in unwrapped.items():
-            for kk, vv in self.items():
-                if self.constructor(kk).match(k) and (matched := vv.match(v)):
-                    new_data[kk] = matched
+        for kt, vt in unwrapped.items():
+            for k, v in self.items():
+                if self.constructor(k).match(kt) and (matched := v.match(vt)):
+                    new_data[k] = matched
                     break
             else:
                 return None
@@ -301,15 +337,16 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
 
         recorder = template.replace_flags()
         unwrapped = template.unwrap_top_level()
-        if not isinstance(unwrapped, list):
-            return None
+
         if matched := super().match(unwrapped):
             return matched
+        if not isinstance(unwrapped, list):
+            return None
 
         new_data = []
-        for x in unwrapped:
-            for xx in self:
-                if matched := xx.match(x):
+        for xt in unwrapped:
+            for x in self:
+                if matched := x.match(xt):
                     new_data.append(matched)
                     break
             else:

@@ -8,6 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import sys
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self
 
 from .css import TREE_CSS_STYLE
@@ -15,6 +16,7 @@ from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
     from ._typing import BasicObj, DataObj, UnwrappedDataObj
+    from .iowrapper import ConfigIOWrapper
 
 NoneType = type(None)
 
@@ -24,23 +26,20 @@ __all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER"]
 MAX_LINE_WIDTH = 88
 
 
-class TemplateFlag:
+@dataclass(unsafe_hash=True)
+class Flag:
     """Template flag."""
 
-    def __init__(self, name: str, /) -> None:
-        self.name = name
+    name: str
 
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-    def __eq__(self, value: Self, /) -> bool:
-        return isinstance(value, self.__class__) and self.name == value.name
+    def __repr__(self) -> str:
+        return self.name
 
 
-ANY = TemplateFlag("ANY")
-RETURN = TemplateFlag("RETURN")
-YIELD = TemplateFlag("YIELD")
-NEVER = TemplateFlag("NEVER")
+ANY = Flag("ANY")
+RETURN = Flag("RETURN")
+YIELD = Flag("YIELD")
+NEVER = Flag("NEVER")
 
 
 class ConfigTemplate:
@@ -59,7 +58,7 @@ class ConfigTemplate:
 
     """
 
-    valid_types = (str, int, float, bool, NoneType, type, Callable, TemplateFlag)
+    valid_types = (str, int, float, bool, NoneType, type, Callable, Flag)
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigTemplate,
@@ -121,6 +120,9 @@ class ConfigTemplate:
 
     def __bool__(self) -> bool:
         return True
+
+    def __eq__(self, value: Self, /) -> bool:
+        return isinstance(value, self.__class__) and self.unwrap() == value.unwrap()
 
     def repr(self, level: int = 0, /) -> str:
         """
@@ -208,13 +210,45 @@ class ConfigTemplate:
         """Match the whole template from the top level."""
         raise TypeError("can't match on a template")
 
+    def safematch(self, template: "DataObj", /) -> Self:
+        """
+        Match the whole template from the top level. Differences to
+        `self.fullmatch()` that the result will always be an instance
+        of self.
+
+        NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
+        method.
+
+        """
+        raise TypeError("can't match on a template")
+
     def search(self, template: "DataObj", /) -> Self | None:
         """Search for the template at any level."""
         raise TypeError("can't search on a template")
 
-    def has_flags(self) -> bool:
+    def fill(
+        self,
+        constructor: type["ConfigIOWrapper"],
+        wrapper: "ConfigIOWrapper | None" = None,
+    ) -> "ConfigIOWrapper":
+        """Fill the template with an iowrapper."""
+        if isinstance(self.__obj, type):
+            if wrapper is not None and isinstance(
+                wrapper.unwrap_top_level(), self.__obj
+            ):
+                return wrapper.copy()
+            return constructor(self.__obj())
+        if isinstance(self.__obj, Callable):
+            if wrapper is not None and self.__obj(wrapper):
+                return wrapper.copy()
+            return constructor(None)
+        if wrapper is None:
+            return constructor(self.__obj)
+        return wrapper.copy()
+
+    def has_flag(self, flag: Flag, /) -> bool:
         """Returns whether the template includes template flags."""
-        return isinstance(self.__obj, TemplateFlag)
+        return self.__obj == flag
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -222,7 +256,7 @@ class ConfigTemplate:
         """Replace all the template flags with callables."""
         if recorder is None:
             recorder = {}
-        if not isinstance(self.__obj, TemplateFlag):
+        if not isinstance(self.__obj, Flag):
             return recorder
 
         if self.__obj == ANY:
@@ -336,10 +370,29 @@ class DictConfigTemplate(ConfigTemplate):
         maker.add("}", "t")
         return maker
 
-    def has_flags(self) -> bool:
-        return any(
-            isinstance(k, TemplateFlag) or v.has_flags() for k, v in self.items()
-        )
+    def fill(
+        self,
+        constructor: type["ConfigIOWrapper"],
+        wrapper: "ConfigIOWrapper | None" = None,
+    ) -> "ConfigIOWrapper":
+        if not isinstance(wrapper.unwrap_top_level(), dict):
+            return constructor({k: v.fill(constructor) for k, v in self.items()})
+
+        new_data = {}
+        for kt, vt in self.items():
+            for k, v in wrapper.items():
+                if constructor(k).match(kt):
+                    new_data[k] = vt.fill(constructor, v)
+                    break
+            else:
+                new_data[self.constructor(kt).fill(constructor).unwrap()] = vt.fill(
+                    constructor
+                )
+
+        return constructor(new_data)
+
+    def has_flag(self, flag: Flag, /) -> bool:
+        return any(k == flag or v.has_flag(flag) for k, v in self.items())
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -439,8 +492,8 @@ class ListConfigTemplate(ConfigTemplate):
         maker.add("]", "t")
         return maker
 
-    def has_flags(self) -> bool:
-        return any(isinstance(x, TemplateFlag) for x in self)
+    def has_flag(self, flag: Flag, /) -> bool:
+        return any(x == flag for x in self)
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -452,6 +505,24 @@ class ListConfigTemplate(ConfigTemplate):
             x.replace_flags(recorder)
 
         return recorder
+
+    def fill(
+        self,
+        constructor: type["ConfigIOWrapper"],
+        wrapper: "ConfigIOWrapper | None" = None,
+    ) -> "ConfigIOWrapper":
+        if not isinstance(wrapper.unwrap_top_level(), list):
+            return constructor([x.fill(constructor) for x in self])
+
+        new_data = []
+        len_wrapper = len(wrapper)
+        for i, xt in enumerate(self):
+            if i < len_wrapper:
+                new_data.append(xt.fill(constructor, wrapper[i]))
+            else:
+                new_data.append(xt.fill(constructor))
+
+        return constructor(new_data)
 
 
 def _sep(level: int) -> str:

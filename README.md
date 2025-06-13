@@ -18,7 +18,7 @@ Faker
 
 ```py
 >>> import cfgtools
->>> cfg = cfgtools.test_case.ip_locations(3, 0)
+>>> cfg = cfgtools.config({"foo": "bar", "this": ["is", "an", "example"]})
 >>> cfg.save("test.cfg", "yaml") # or: cfg.to_yaml("test.cfg")
 ```
 If not specifeid, the format of the file will be automatically detected according to the file suffix. Valid formats include `ini`, `json`, `yaml`, `pickle`, etc. For example:
@@ -30,15 +30,7 @@ If not specifeid, the format of the file will be automatically detected accordin
 ### Read from a config file
 ```py
 >>> cfgtools.read("test.cfg")
-cfgtools.config({
-    '38.113.227.125': [
-        'Changchester', '4759 William Haven Apt. 194', 'West Corey, CA 90152',
-    ],
-    '128.18.185.81': ['Ryanborough', 'Unit 7784 Box 0801', 'DPO AP 52775'],
-    '85.75.200.206': [
-        'Claytonmouth', '139 John Divide Suite 115', 'Rodriguezside, LA 93111',
-    ],
-})
+cfgtools.config({'foo': 'bar', 'this': ['is', 'an', 'example']})
 ```
 The encoding and format of the file will be automatically detected if not specified.
 
@@ -53,5 +45,8 @@ The encoding and format of the file will be automatically detected if not specif
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.2
+* New method `ConfigIOWrapper.safematch()`
+
 ### v0.0.1
 * Initial release.
