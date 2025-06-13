@@ -92,7 +92,7 @@ class ConfigTemplate:
         raise TypeError(f"{self.__desc()} does not support item assignment")
 
     def __repr__(self) -> str:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrapp())) <= self.get_max_line_width():
             s = flat
         else:
             s = self.repr()
@@ -106,7 +106,7 @@ class ConfigTemplate:
         return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
 
     def __str__(self) -> str:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrapp())) <= self.get_max_line_width():
             return flat
         return self.repr()
 
@@ -163,10 +163,14 @@ class ConfigTemplate:
     def copy(self) -> Self:
         """Copy an instance of self."""
         constructor = self.__class__ if self.constructor is object else self.constructor
-        return constructor(self.unwrap())
+        return constructor(self.unwrapp())
 
     def unwrap(self) -> "UnwrappedDataObj":
         """Returns the unwrapped data."""
+        return None if self.__obj == FIXED_POINT else self.__obj
+
+    def unwrapp(self) -> "UnwrappedDataObj":
+        """Returns the unwrapped data, preserving the `FIXED_POINT` tags.."""
         return self.__obj
 
     def unwrap_top_level(self) -> "DataObj":
@@ -236,11 +240,12 @@ class ConfigTemplate:
                 wrapper.unwrap_top_level(), self.__obj
             ):
                 return wrapper.copy()
-            return self.__obj()
+            return constructor(self.__obj())
         if isinstance(self.__obj, Callable):
-            if wrapper is not None and self.__obj(wrapper):
-                return wrapper.copy()
-            return FIXED_POINT
+            if wrapper is not None:
+                if wrapper.unwrap_top_level() == FIXED_POINT or self.__obj(wrapper):
+                    return wrapper.copy()
+            return constructor(FIXED_POINT)
         return constructor(self.unwrap())
 
     def has_flag(self, flag: Flag, /) -> bool:
@@ -317,7 +322,7 @@ class DictConfigTemplate(ConfigTemplate):
         for k, v in self.__obj.items():
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
-            _flat = repr(v.unwrap())
+            _flat = repr(v.unwrapp())
             if lines and (len(_head) + len(_key) + len(_flat) + 2 <= max_line_width):
                 lines[-1] += " " + _key + _flat + ","
             elif len(seps) + len(_key) + len(_flat) < max_line_width:
@@ -343,7 +348,12 @@ class DictConfigTemplate(ConfigTemplate):
         return self.__obj.items()
 
     def unwrap(self) -> "UnwrappedDataObj":
-        return {k: v.unwrap() for k, v in self.__obj.items()}
+        return {
+            None if k == FIXED_POINT else k: v.unwrap() for k, v in self.__obj.items()
+        }
+
+    def unwrapp(self) -> "UnwrappedDataObj":
+        return {k: v.unwrapp() for k, v in self.__obj.items()}
 
     def unwrap_top_level(self) -> "DataObj":
         return self.__obj
@@ -352,7 +362,7 @@ class DictConfigTemplate(ConfigTemplate):
         return self.unwrap()
 
     def to_html(self) -> HTMLTreeMaker:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrapp())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
         for k, v in self.__obj.items():
@@ -438,7 +448,7 @@ class ListConfigTemplate(ConfigTemplate):
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
             _head = lines[-1] if lines else ""
-            _flat = repr(x.unwrap())
+            _flat = repr(x.unwrapp())
             if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
                 lines[-1] += " " + _flat + ","
             elif len(_head) + len(_flat) < max_line_width:
@@ -467,6 +477,9 @@ class ListConfigTemplate(ConfigTemplate):
     def unwrap(self) -> "UnwrappedDataObj":
         return [x.unwrap() for x in self.__obj]
 
+    def unwrapp(self) -> "UnwrappedDataObj":
+        return [x.unwrapp() for x in self.__obj]
+
     def unwrap_top_level(self) -> "DataObj":
         return self.__obj
 
@@ -474,7 +487,7 @@ class ListConfigTemplate(ConfigTemplate):
         return self.unwrap()
 
     def to_html(self) -> HTMLTreeMaker:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+        if len(flat := repr(self.unwrapp())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
         for x in self.__obj:

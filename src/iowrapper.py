@@ -172,7 +172,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             if isinstance(self.unwrap_top_level(), unwrapped):
                 return self.copy()
         elif isinstance(unwrapped, Callable):
-            if unwrapped(self):
+            if self.unwrap_top_level() == FIXED_POINT or unwrapped(self):
                 return self.copy()
         elif self.unwrap_top_level() == unwrapped:
             return self.copy()
