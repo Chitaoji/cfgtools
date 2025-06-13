@@ -246,7 +246,9 @@ class ConfigTemplate:
                 if wrapper.unwrap_top_level() == FIXED_POINT or self.__obj(wrapper):
                     return wrapper.copy()
             return constructor(FIXED_POINT)
-        return constructor(self.unwrap())
+        if wrapper is None:
+            return constructor(self.__obj)
+        return wrapper.copy()
 
     def has_flag(self, flag: Flag, /) -> bool:
         """Returns whether the template includes template flags."""
