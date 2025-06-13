@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Callable, Self
 from .css import TREE_CSS_STYLE
 from .saver import ConfigSaver
 from .tpl import (
-    FIXED_POINT,
     RETURN,
     YIELD,
     ConfigTemplate,
@@ -76,7 +75,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
 
     """
 
-    valid_types = str, int, float, bool, NoneType, Flag
+    valid_types = str, int, float, bool, NoneType
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigIOWrapper,
@@ -91,9 +90,6 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         path: str | Path | None = None,
         encoding: str | None = None,
     ) -> None:
-        if isinstance(data, Flag):
-            if not data == FIXED_POINT:
-                raise ValueError(f"invalid data: {data}")
         super().__init__(data)
         self.fileformat = fileformat
         self.overwrite_ok = True
@@ -172,7 +168,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             if isinstance(self.unwrap_top_level(), unwrapped):
                 return self.copy()
         elif isinstance(unwrapped, Callable):
-            if self.unwrap_top_level() == FIXED_POINT or unwrapped(self):
+            if unwrapped(self):
                 return self.copy()
         elif self.unwrap_top_level() == unwrapped:
             return self.copy()
@@ -189,7 +185,9 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
 
         recorder = template.replace_flags()
 
-        if (matched := self.match(template)).unwrap() == self.unwrap():
+        if (
+            matched := self.match(template)
+        ) is not None and matched.unwrap() == self.unwrap():
             if recorder:
                 if "RETURN" in recorder:
                     return ConfigIOWrapper(recorder["RETURN"])
