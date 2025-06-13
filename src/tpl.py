@@ -527,11 +527,10 @@ class ListConfigTemplate(ConfigTemplate):
             return constructor([x.fill(constructor) for x in self])
 
         new_data = []
-        for xt in self:
-            for x in wrapper:
-                if matched := constructor(x).match(xt):
-                    new_data.append(matched)
-                    break
+        len_wrapper = len(wrapper)
+        for i, xt in enumerate(self):
+            if i < len_wrapper:
+                new_data.append(xt.fill(constructor, wrapper[i]))
             else:
                 new_data.append(xt.fill(constructor))
 
