@@ -214,8 +214,7 @@ class ConfigTemplate:
         """
         Match the whole template from the top level. Differences to
         `self.fullmatch()` that the result will always be an instance
-        of self, and will meet `self.safematch(template).fullmatch(template)
-        == self.safematch(template)`.
+        of self.
 
         NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
         method.
