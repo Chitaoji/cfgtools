@@ -46,7 +46,7 @@ This project falls under the BSD 3-Clause License.
 
 ## History
 ### v0.0.2
-* New method `ConfigIOWrapper.safematch()`
+* New method `ConfigIOWrapper.safematch()`.
 
 ### v0.0.1
 * Initial release.
