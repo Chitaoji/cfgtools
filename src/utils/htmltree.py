@@ -14,10 +14,10 @@ class HTMLTreeMaker:
     value : str, optional
         Value of child node, by default None.
     clsname : str | None, optional
-        Class name, by default None. If not specifeid, the class name will
-        be "m" ("m" for "main").
+        Class name of the current node, by default None. If not specifeid,
+        the class name will be "m" ("m" for "main").
     default_level : int, optional
-        Default levels to set open, by default 2.
+        Specifeid the default levels that will be set open, by default 2.
 
     """
 
@@ -37,7 +37,7 @@ class HTMLTreeMaker:
         self, maybe_value: str | Self | list[Self], maybe_cls: str | None = None
     ) -> None:
         """
-        Add a child node, and return it.
+        Add a child node.
 
         Parameters
         ----------
@@ -102,31 +102,46 @@ class HTMLTreeMaker:
         """Return whether there is a child node."""
         return bool(self.__children)
 
-    def make(self, clsname: str | None = None, style: str | None = None) -> str:
-        """Make a string of the HTML tree."""
-        if clsname is None:
-            clsname = "tree"
+    def make(self, tree_clsname: str | None = None, style: str | None = None) -> str:
+        """
+        Make a string representation of the HTML tree.
+
+        Parameters
+        ----------
+        tree_clsname : str | None, optional
+            The class name of the tree, by default None.
+        style : str | None, optional
+            Tree style, by default None.
+
+        Returns
+        -------
+        str
+            String representation.
+
+        """
+        if tree_clsname is None:
+            tree_clsname = "tree"
         if style is None:
             style = f"""<style type="text/css">
-.{clsname} li>details>summary>span.open,
-.{clsname} li>details[open]>summary>span.closed {{
+.{tree_clsname} li>details>summary>span.open,
+.{tree_clsname} li>details[open]>summary>span.closed {{
     display: none;
 }}
-.{clsname} li>details[open]>summary>span.open {{
+.{tree_clsname} li>details[open]>summary>span.open {{
     display: inline;
 }}
-.{clsname} li>details>summary {{
+.{tree_clsname} li>details>summary {{
     display: block;
     cursor: pointer;
 }}
 </style>"""
-        return f'{style}\n<ul class="{clsname}">\n{self.make_plain(0)}\n</ul>'
+        return f'{style}\n<ul class="{tree_clsname}">\n{self.make_node(0)}\n</ul>'
 
-    def make_plain(self, level: int, /) -> str:
-        """Make a string of the HTML tree without css style."""
+    def make_node(self, level: int, /) -> str:
+        """Make a string representation of the current node."""
         if not self.__children:
             return f'<li class="{self.__cls}"><span>{self.__val}</span></li>'
-        children_str = "\n".join(x.make_plain(level + 1) for x in self.__children)
+        children_str = "\n".join(x.make_node(level + 1) for x in self.__children)
         if self.__val is None:
             return children_str
         details_open = " open" if level < self.__default_level else ""
