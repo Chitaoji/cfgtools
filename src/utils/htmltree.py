@@ -13,27 +13,29 @@ class HTMLTreeMaker:
     ----------
     value : str, optional
         Value of child node, by default None.
-    clsname : str | None, optional
-        Class name of the current node, by default None. If not specifeid,
-        the class name will be "m" ("m" for "main").
-    default_style : str | None, optional
-        Default css style, by default None.
+    clsname : str, optional
+        Class name of the current node, by default "m" ("m" for "main").
+    treecls : str, optional
+        Tree class name, by default "tree".
+    style : str | None, optional
+        Css style, by default None.
     default_open_level : int, optional
-        Specifeid the default levels that will be set open, by default 3.
+        Specifeid the default levels to be set open, by default 3.
 
     """
 
     def __init__(
         self,
         value: str | None = None,
-        clsname: str | None = None,
-        default_style: str | None = None,
+        clsname: str = "m",
+        treecls: str = "tree",
+        style: str | None = None,
         default_open_level: int = 3,
-        /,
     ) -> None:
         self.__val = value
-        self.__cls = "m" if clsname is None else clsname
-        self.__default_style = default_style
+        self.__cls = clsname
+        self.__treecls = treecls
+        self.__style = style
         self.__default_open_level = default_open_level
         self.__children: list[Self] = []
 
@@ -102,6 +104,22 @@ class HTMLTreeMaker:
         """Get the node class name."""
         return self.__cls
 
+    def set_treecls(self, clsname: str, /) -> None:
+        """Set the node class name."""
+        self.__treecls = clsname
+
+    def get_treecls(self) -> str | None:
+        """Get the node class name."""
+        return self.__treecls
+
+    def setstyle(self, style: str | None, /) -> None:
+        """Set the default css style."""
+        self.__style = style
+
+    def getstyle(self) -> str | None:
+        """Get the node class name."""
+        return self.__style
+
     def has_child(self) -> bool:
         """Return whether there is a child node."""
         return bool(self.__children)
@@ -124,9 +142,9 @@ class HTMLTreeMaker:
 
         """
         if tree_clsname is None:
-            tree_clsname = "tree"
+            tree_clsname = self.__treecls
         if style is None:
-            if self.__default_style is None:
+            if self.__style is None:
                 style = f"""<style type="text/css">
 .{tree_clsname} li>details>summary>span.open,
 .{tree_clsname} li>details[open]>summary>span.closed {{
@@ -141,7 +159,7 @@ class HTMLTreeMaker:
 }}
 </style>"""
             else:
-                style = self.__default_style
+                style = self.__style
         return f'{style}\n<ul class="{tree_clsname}">\n{self.make_node(0)}\n</ul>'
 
     def make_node(self, level: int, /) -> str:

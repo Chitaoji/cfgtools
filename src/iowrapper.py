@@ -123,10 +123,10 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         return f"cfgtools.config({s})"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
-        maker = self.to_html()
-        maker.setcls("t")
-        main_maker = HTMLTreeMaker()
-        main_maker.add(maker)
+        return {"text/html": self.to_html().make()}
+
+    def to_html(self) -> HTMLTreeMaker:
+        main_maker = super().to_html()
         main_maker.add(
             (
                 f"format: {self.fileformat!r} | path: {self.path!r} "
@@ -134,7 +134,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             ),
             "i",
         )
-        return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
+        return main_maker
 
     def set_path(self, path: str | Path) -> None:
         """Set the path."""

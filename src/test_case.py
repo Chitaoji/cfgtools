@@ -14,7 +14,7 @@ __all__ = ["ip_locations", "customer_data", "order_records"]
 
 
 def ip_locations(
-    number_of_addresses: int = 20, seed: int | None = None
+    number_of_addresses: int = 10, seed: int | None = None
 ) -> "ConfigIOWrapper":
     """
     Returns a fake mapping of IP addresses to the real-world geographic
@@ -23,7 +23,7 @@ def ip_locations(
     Parameters
     ----------
     number_of_addresses : int, optional
-        Number of ip addresses, by default 20.
+        Number of ip addresses, by default 10.
     seed : int | None, optional
         Seed value, by default None.
 
@@ -42,7 +42,7 @@ def ip_locations(
 
 
 def customer_data(
-    number_of_customers: int = 20, seed: int | None = None
+    number_of_customers: int = 3, seed: int | None = None
 ) -> "ConfigIOWrapper":
     """
     Returns a fake mapping of customers' names to their data, including
@@ -51,7 +51,7 @@ def customer_data(
     Parameters
     ----------
     number_of_customers : int, optional
-        Number of customers, by default 20.
+        Number of customers, by default 3.
     seed : int | None, optional
         Seed value, by default None.
 
@@ -87,7 +87,7 @@ def customer_data(
 
 
 def order_records(
-    number_of_orders: int = 20, seed: int | None = None
+    number_of_orders: int = 3, seed: int | None = None
 ) -> "ConfigIOWrapper":
     """
     Returns a fake list of order records, including order-ids,
@@ -97,7 +97,7 @@ def order_records(
     Parameters
     ----------
     number_of_orders : int, optional
-        Number of orders, by default 20.
+        Number of orders, by default 3.
     seed : int | None, optional
         Seed value, by default None.
 

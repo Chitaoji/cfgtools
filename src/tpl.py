@@ -98,11 +98,7 @@ class ConfigTemplate:
         return f"cfgtools.template({s})"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
-        maker = self.to_html()
-        maker.setcls("t")
-        main_maker = HTMLTreeMaker()
-        main_maker.add(maker)
-        return {"text/html": main_maker.make("cfgtools-tree", TREE_CSS_STYLE)}
+        return {"text/html": self.to_html().make()}
 
     def __str__(self) -> str:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
@@ -196,6 +192,20 @@ class ConfigTemplate:
 
     def to_html(self) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
+        maker = self.get_html_node()
+        maker.setcls("t")
+        main_maker = HTMLTreeMaker()
+        main_maker.add(maker)
+        main_maker.setstyle(TREE_CSS_STYLE)
+        main_maker.set_treecls("cfgtools-tree")
+        return main_maker
+
+    def get_html_node(self) -> HTMLTreeMaker:
+        """
+        Return a plain HTMLTreeMaker object for representing the current
+        node.
+
+        """
         return HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
 
     def get_max_line_width(self) -> int:
@@ -354,12 +364,12 @@ class DictConfigTemplate(ConfigTemplate):
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.unwrap()
 
-    def to_html(self) -> HTMLTreeMaker:
+    def get_html_node(self) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
         for k, v in self.__obj.items():
-            node = v.to_html()
+            node = v.get_html_node()
             if node.has_child():
                 node.setval(f"{k!r}: {node.getval()}")
                 tail = node.get(-1)
@@ -476,12 +486,12 @@ class ListConfigTemplate(ConfigTemplate):
     def to_list(self) -> list["UnwrappedDataObj"]:
         return self.unwrap()
 
-    def to_html(self) -> HTMLTreeMaker:
+    def get_html_node(self) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
         for x in self.__obj:
-            node = x.to_html()
+            node = x.get_html_node()
             if node.has_child():
                 node.setval(f"{node.getval()}")
                 tail = node.get(-1)
