@@ -16,8 +16,10 @@ class HTMLTreeMaker:
     clsname : str | None, optional
         Class name of the current node, by default None. If not specifeid,
         the class name will be "m" ("m" for "main").
-    default_level : int, optional
-        Specifeid the default levels that will be set open, by default 2.
+    default_style : str | None, optional
+        Default css style, by default None.
+    default_open_level : int, optional
+        Specifeid the default levels that will be set open, by default 3.
 
     """
 
@@ -25,12 +27,14 @@ class HTMLTreeMaker:
         self,
         value: str | None = None,
         clsname: str | None = None,
-        default_level: int = 3,
+        default_style: str | None = None,
+        default_open_level: int = 3,
         /,
     ) -> None:
         self.__val = value
         self.__cls = "m" if clsname is None else clsname
-        self.__default_level = default_level
+        self.__default_style = default_style
+        self.__default_open_level = default_open_level
         self.__children: list[Self] = []
 
     def add(
@@ -111,7 +115,7 @@ class HTMLTreeMaker:
         tree_clsname : str | None, optional
             The class name of the tree, by default None.
         style : str | None, optional
-            Tree style, by default None.
+            Css style, by default None.
 
         Returns
         -------
@@ -122,7 +126,8 @@ class HTMLTreeMaker:
         if tree_clsname is None:
             tree_clsname = "tree"
         if style is None:
-            style = f"""<style type="text/css">
+            if self.__default_style is None:
+                style = f"""<style type="text/css">
 .{tree_clsname} li>details>summary>span.open,
 .{tree_clsname} li>details[open]>summary>span.closed {{
     display: none;
@@ -135,6 +140,8 @@ class HTMLTreeMaker:
     cursor: pointer;
 }}
 </style>"""
+            else:
+                style = self.__default_style
         return f'{style}\n<ul class="{tree_clsname}">\n{self.make_node(0)}\n</ul>'
 
     def make_node(self, level: int, /) -> str:
@@ -144,23 +151,69 @@ class HTMLTreeMaker:
         children_str = "\n".join(x.make_node(level + 1) for x in self.__children)
         if self.__val is None:
             return children_str
-        details_open = " open" if level < self.__default_level else ""
+        details_open = " open" if level < self.__default_open_level else ""
         return (
             f'<li class="{self.__cls}"><details{details_open}><summary>{self.__val}'
             f'</summary>\n<ul class="{self.__cls}">\n{children_str}\n</ul>\n'
             "</details></li>"
         )
 
-    def show(self, clsname: str | None = None, style: str | None = None) -> "HTMLRepr":
-        """Show the html tree."""
-        return HTMLRepr(self.make(clsname, style))
+    def show(
+        self, tree_clsname: str | None = None, style: str | None = None
+    ) -> "HTMLRepr":
+        """
+        Show the html tree.
+
+        Parameters
+        ----------
+        tree_clsname : str | None, optional
+            The class name of the tree, by default None.
+        style : str | None, optional
+            Css style, by default None.
+
+        Returns
+        -------
+        HTMLRepr
+            Represents an html object.
+
+        """
+        return HTMLRepr(self.make(tree_clsname, style))
+
+    def print(self, tree_clsname: str | None = None, style: str | None = None) -> str:
+        """
+        Print the string representation of the html tree.
+
+        Parameters
+        ----------
+        tree_clsname : str | None, optional
+            The class name of the tree, by default None.
+        style : str | None, optional
+            Css style, by default None.
+
+        Returns
+        -------
+        StrRepr
+            Represents a string.
+
+        """
+        return StrRepr(self.make(tree_clsname, style))
 
 
 class HTMLRepr:
-    """Represent an html object."""
+    """Represents an html object."""
 
     def __init__(self, html_str: str) -> None:
         self.html_str = html_str
 
     def _repr_html_(self) -> str:
+        return self.html_str
+
+
+class StrRepr:
+    """Represents a string."""
+
+    def __init__(self, html_str: str) -> None:
+        self.html_str = html_str
+
+    def __repr__(self) -> str:
         return self.html_str
