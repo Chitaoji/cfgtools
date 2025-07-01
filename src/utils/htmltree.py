@@ -13,44 +13,43 @@ class HTMLTreeMaker:
     ----------
     value : str, optional
         Value of child node, by default None.
-    clsname : str, optional
+    nodecls : str, optional
         Class name of the current node, by default "m" ("m" for "main").
     treecls : str, optional
-        Tree class name, by default "tree".
+        Class name of the tree, by default "tree".
     style : str | None, optional
         Css style, by default None.
-    default_open_level : int, optional
-        Specifeid the default levels to be set open, by default 3.
+    level_open : int, optional
+        Specifies how many levels of the tree are defaultly set open, by
+        default 3.
 
     """
 
     def __init__(
         self,
         value: str | None = None,
-        clsname: str = "m",
+        nodecls: str = "m",
         treecls: str = "tree",
         style: str | None = None,
-        default_open_level: int = 3,
+        level_open: int = 3,
     ) -> None:
         self.__val = value
-        self.__cls = clsname
+        self.__nodecls = nodecls
         self.__treecls = treecls
         self.__style = style
-        self.__default_open_level = default_open_level
+        self.__level_open = level_open
         self.__children: list[Self] = []
 
-    def add(
-        self, maybe_value: str | Self | list[Self], maybe_cls: str | None = None
-    ) -> None:
+    def add(self, value: str | Self, nodecls: str | None = None, /) -> None:
         """
         Add a child node.
 
         Parameters
         ----------
-        maybe_value : str | Self | list[Self]
-            Node value or the instance(s) of the child node(s).
-        maybe_cls : str | None, optional
-            May be used as the class name, by default None.
+        value : str | Self | list[Self]
+            Node value or an instance of the child node.
+        nodecls : str | None, optional
+            Node class name, by default None.
 
         Returns
         -------
@@ -58,27 +57,17 @@ class HTMLTreeMaker:
             The new node.
 
         """
-        if isinstance(maybe_value, str):
-            self.__children.append(self.__class__(maybe_value, maybe_cls))
-        elif isinstance(maybe_value, list):
-            if maybe_cls:
-                for x in maybe_value:
-                    if not isinstance(x, self.__class__):
-                        raise TypeError(
-                            f"object of type {x.__class__.__name__} is not allowed "
-                            "to be a child node"
-                        )
-                    x.setcls(maybe_cls)
-            self.__children.extend(maybe_value)
+        if isinstance(value, str):
+            self.__children.append(self.__class__(value, nodecls))
         else:
-            if not isinstance(maybe_value, self.__class__):
+            if not isinstance(value, self.__class__):
                 raise TypeError(
-                    f"object of type {maybe_value.__class__.__name__} is not allowed "
+                    f"object of type {value.__class__.__name__} is not allowed "
                     "to be a child node"
                 )
-            if maybe_cls:
-                maybe_value.setcls(maybe_cls)
-            self.__children.append(maybe_value)
+            if nodecls:
+                value.setcls(nodecls)
+            self.__children.append(value)
 
     def discard(self, index: int, /) -> None:
         """Discard the n-th child node."""
@@ -96,20 +85,20 @@ class HTMLTreeMaker:
         """Get the node value."""
         return self.__val
 
-    def setcls(self, clsname: str, /) -> None:
+    def setcls(self, nodecls: str, /) -> None:
         """Set the node class name."""
-        self.__cls = clsname
+        self.__nodecls = nodecls
 
     def getcls(self) -> str | None:
         """Get the node class name."""
-        return self.__cls
+        return self.__nodecls
 
-    def set_treecls(self, clsname: str, /) -> None:
-        """Set the node class name."""
-        self.__treecls = clsname
+    def set_treecls(self, treecls: str, /) -> None:
+        """Set the tree class name."""
+        self.__treecls = treecls
 
     def get_treecls(self) -> str | None:
-        """Get the node class name."""
+        """Get the tree class name."""
         return self.__treecls
 
     def setstyle(self, style: str | None, /) -> None:
@@ -117,20 +106,20 @@ class HTMLTreeMaker:
         self.__style = style
 
     def getstyle(self) -> str | None:
-        """Get the node class name."""
+        """Get the default css style."""
         return self.__style
 
     def has_child(self) -> bool:
         """Return whether there is a child node."""
         return bool(self.__children)
 
-    def make(self, tree_clsname: str | None = None, style: str | None = None) -> str:
+    def make(self, treecls: str | None = None, style: str | None = None) -> str:
         """
         Make a string representation of the HTML tree.
 
         Parameters
         ----------
-        tree_clsname : str | None, optional
+        treecls : str | None, optional
             The class name of the tree, by default None.
         style : str | None, optional
             Css style, by default None.
@@ -141,50 +130,48 @@ class HTMLTreeMaker:
             String representation.
 
         """
-        if tree_clsname is None:
-            tree_clsname = self.__treecls
+        if treecls is None:
+            treecls = self.__treecls
         if style is None:
             if self.__style is None:
                 style = f"""<style type="text/css">
-.{tree_clsname} li>details>summary>span.open,
-.{tree_clsname} li>details[open]>summary>span.closed {{
+.{treecls} li>details>summary>span.open,
+.{treecls} li>details[open]>summary>span.closed {{
     display: none;
 }}
-.{tree_clsname} li>details[open]>summary>span.open {{
+.{treecls} li>details[open]>summary>span.open {{
     display: inline;
 }}
-.{tree_clsname} li>details>summary {{
+.{treecls} li>details>summary {{
     display: block;
     cursor: pointer;
 }}
 </style>"""
             else:
                 style = self.__style
-        return f'{style}\n<ul class="{tree_clsname}">\n{self.make_node(0)}\n</ul>'
+        return f'{style}\n<ul class="{treecls}">\n{self.make_node(0)}\n</ul>'
 
     def make_node(self, level: int, /) -> str:
         """Make a string representation of the current node."""
         if not self.__children:
-            return f'<li class="{self.__cls}"><span>{self.__val}</span></li>'
+            return f'<li class="{self.__nodecls}"><span>{self.__val}</span></li>'
         children_str = "\n".join(x.make_node(level + 1) for x in self.__children)
         if self.__val is None:
             return children_str
-        details_open = " open" if level < self.__default_open_level else ""
+        details_open = " open" if level < self.__level_open else ""
         return (
-            f'<li class="{self.__cls}"><details{details_open}><summary>{self.__val}'
-            f'</summary>\n<ul class="{self.__cls}">\n{children_str}\n</ul>\n'
+            f'<li class="{self.__nodecls}"><details{details_open}><summary>{self.__val}'
+            f'</summary>\n<ul class="{self.__nodecls}">\n{children_str}\n</ul>\n'
             "</details></li>"
         )
 
-    def show(
-        self, tree_clsname: str | None = None, style: str | None = None
-    ) -> "HTMLRepr":
+    def show(self, treecls: str | None = None, style: str | None = None) -> "HTMLRepr":
         """
         Show the html tree.
 
         Parameters
         ----------
-        tree_clsname : str | None, optional
+        treecls : str | None, optional
             The class name of the tree, by default None.
         style : str | None, optional
             Css style, by default None.
@@ -195,15 +182,15 @@ class HTMLTreeMaker:
             Represents an html object.
 
         """
-        return HTMLRepr(self.make(tree_clsname, style))
+        return HTMLRepr(self.make(treecls, style))
 
-    def print(self, tree_clsname: str | None = None, style: str | None = None) -> str:
+    def print(self, treecls: str | None = None, style: str | None = None) -> str:
         """
         Print the string representation of the html tree.
 
         Parameters
         ----------
-        tree_clsname : str | None, optional
+        treecls : str | None, optional
             The class name of the tree, by default None.
         style : str | None, optional
             Css style, by default None.
@@ -214,24 +201,24 @@ class HTMLTreeMaker:
             Represents a string.
 
         """
-        return StrRepr(self.make(tree_clsname, style))
+        return StrRepr(self.make(treecls, style))
 
 
 class HTMLRepr:
     """Represents an html object."""
 
-    def __init__(self, html_str: str) -> None:
-        self.html_str = html_str
+    def __init__(self, html_str: str, /) -> None:
+        self.__html_str = html_str
 
     def _repr_html_(self) -> str:
-        return self.html_str
+        return self.__html_str
 
 
 class StrRepr:
     """Represents a string."""
 
-    def __init__(self, html_str: str) -> None:
-        self.html_str = html_str
+    def __init__(self, html_str: str, /) -> None:
+        self.__html_str = html_str
 
     def __repr__(self) -> str:
-        return self.html_str
+        return self.__html_str
