@@ -58,7 +58,9 @@ class HTMLTreeMaker:
 
         """
         if isinstance(value, str):
-            self.__children.append(self.__class__(value, nodecls))
+            self.__children.append(
+                self.__class__(value, "m" if nodecls is None else nodecls)
+            )
         else:
             if not isinstance(value, self.__class__):
                 raise TypeError(
@@ -134,22 +136,25 @@ class HTMLTreeMaker:
             treecls = self.__treecls
         if style is None:
             if self.__style is None:
-                style = f"""<style type="text/css">
-.{treecls} li>details>summary>span.open,
-.{treecls} li>details[open]>summary>span.closed {{
+                style = """<style type="text/css">
+.{0} li>details>summary>span.open,
+.{0} li>details[open]>summary>span.closed {{
     display: none;
 }}
-.{treecls} li>details[open]>summary>span.open {{
+.{0} li>details[open]>summary>span.open {{
     display: inline;
 }}
-.{treecls} li>details>summary {{
+.{0} li>details>summary {{
     display: block;
     cursor: pointer;
 }}
 </style>"""
             else:
                 style = self.__style
-        return f'{style}\n<ul class="{treecls}">\n{self.make_node(0)}\n</ul>'
+        return (
+            f'{style.format(treecls)}\n<ul class="{treecls}">\n{self.make_node(0)}'
+            "\n</ul>"
+        )
 
     def make_node(self, level: int, /) -> str:
         """Make a string representation of the current node."""
