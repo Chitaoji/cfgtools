@@ -11,6 +11,7 @@ $ pip install cfgtools
 pyyaml
 lazyr
 Faker
+htmlmaster
 ```
 
 ## Usage
