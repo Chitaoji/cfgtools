@@ -5,11 +5,14 @@ NOTE: this module is not intended to be imported at runtime.
 
 """
 
-from typing import Callable, Literal
+from typing import TYPE_CHECKING, Callable, Literal
 
 import loggings
 
 from .tpl import ConfigTemplate, Flag
+
+if TYPE_CHECKING:
+    from .iowrapper import ConfigIOWrapper
 
 loggings.warning("this module is not intended to be imported at runtime")
 

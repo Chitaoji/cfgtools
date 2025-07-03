@@ -42,4 +42,5 @@ TREE_CSS_STYLE = """<style type="text/css">
     padding-left: 0;
     margin-left: 0;
 }}
-</style>"""
+</style>
+"""

@@ -11,8 +11,9 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self
 
+from htmlmaster import HTMLTreeMaker
+
 from .css import TREE_CSS_STYLE
-from .utils.htmltree import HTMLTreeMaker
 
 if TYPE_CHECKING:
     from ._typing import BasicObj, DataObj, UnwrappedDataObj
@@ -197,7 +198,7 @@ class ConfigTemplate:
         main_maker = HTMLTreeMaker()
         main_maker.add(maker)
         main_maker.setstyle(TREE_CSS_STYLE)
-        main_maker.set_treecls("cfgtools-tree")
+        main_maker.set_maincls("cfgtools-tree")
         return main_maker
 
     def get_html_node(self) -> HTMLTreeMaker:

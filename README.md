@@ -27,6 +27,7 @@ If not specifeid, the format of the file will be automatically detected accordin
 >>> cfg.save("test.pkl") # a pickle file is created
 >>> cfg.save("unspecified.cfg") # by default a json file is created
 ```
+
 ### Read from a config file
 ```py
 >>> cfgtools.read("test.cfg")
