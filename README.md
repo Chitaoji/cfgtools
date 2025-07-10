@@ -47,6 +47,9 @@ The encoding and format of the file will be automatically detected if not specif
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.3
+* Added requirement `htmlmaster`.
+
 ### v0.0.2
 * New method `ConfigIOWrapper.safematch()`.
 
