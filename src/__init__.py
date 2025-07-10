@@ -17,6 +17,7 @@ file suffix. Valid formats include `ini`, `json`, `yaml`, `pickle`, etc. For exa
 >>> cfg.save("test.pkl") # a pickle file is created
 >>> cfg.save("unspecified.cfg") # by default a json file is created
 ```
+
 ### Read from a config file
 ```py
 >>> cfgtools.read("test.cfg")

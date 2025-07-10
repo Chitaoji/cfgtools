@@ -11,6 +11,7 @@ $ pip install cfgtools
 pyyaml
 lazyr
 Faker
+htmlmaster
 ```
 
 ## Usage
@@ -27,6 +28,7 @@ If not specifeid, the format of the file will be automatically detected accordin
 >>> cfg.save("test.pkl") # a pickle file is created
 >>> cfg.save("unspecified.cfg") # by default a json file is created
 ```
+
 ### Read from a config file
 ```py
 >>> cfgtools.read("test.cfg")
@@ -45,6 +47,9 @@ The encoding and format of the file will be automatically detected if not specif
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.3
+* Added requirement `htmlmaster`.
+
 ### v0.0.2
 * New method `ConfigIOWrapper.safematch()`.
 
