@@ -96,8 +96,11 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         if path is None:
             self.path = None
         else:
-            path = Path(path)
-            self.path = path.absolute().relative_to(path.cwd()).as_posix()
+            abs_path, cwd_path = (path := Path(path)).absolute(), path.cwd()
+            if abs_path.is_relative_to(cwd_path):
+                self.path = abs_path.relative_to(cwd_path).as_posix()
+            else:
+                self.path = abs_path.relative_to(path.home()).as_posix()
         self.encoding = encoding
 
     def __enter__(self) -> Self:
