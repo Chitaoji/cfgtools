@@ -47,6 +47,9 @@ The encoding and format of the file will be automatically detected if not specif
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.5
+* Added support for .toml files.
+
 ### v0.0.4
 * Fixed a bug in path resolution.
 

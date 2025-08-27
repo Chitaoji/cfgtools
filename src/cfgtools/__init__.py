@@ -44,15 +44,15 @@ lazyr.register("yaml")
 lazyr.register(".test_case")
 
 # pylint: disable=wrong-import-position
-from . import core, iowrapper, reader, test_case, tpl
+from . import core, iowrapper, reader, templatelib, test_case
 from ._version import __version__
 from .core import *
 from .iowrapper import *
 from .reader import *
-from .tpl import *
+from .templatelib import *
 
 __all__: list[str] = ["test_case"]
 __all__.extend(core.__all__)
 __all__.extend(iowrapper.__all__)
 __all__.extend(reader.__all__)
-__all__.extend(tpl.__all__)
+__all__.extend(templatelib.__all__)

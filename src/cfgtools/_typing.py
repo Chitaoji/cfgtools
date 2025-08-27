@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Literal
 
 import loggings
 
-from .tpl import ConfigTemplate, Flag
+from .templatelib import ConfigTemplate, Flag
 
 if TYPE_CHECKING:
     from .iowrapper import ConfigIOWrapper

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Callable, Self
 from htmlmaster import HTMLTreeMaker
 
 from .saver import ConfigSaver, FileFormatError
-from .tpl import (
+from .templatelib import (
     RETURN,
     YIELD,
     ConfigTemplate,

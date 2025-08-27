@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from .iowrapper import ConfigIOWrapper
 from .reader import ConfigReader
-from .tpl import ConfigTemplate
+from .templatelib import ConfigTemplate
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, DataObj
