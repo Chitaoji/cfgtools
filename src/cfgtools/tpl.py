@@ -172,17 +172,6 @@ class ConfigTemplate:
         """Returns the data, with only the top level unwrapped."""
         return self.__obj
 
-    def to_ini_dict(self) -> dict:
-        """Reformat the data with `.ini` format, and returns a dict."""
-        obj = self.unwrap()
-        if isinstance(obj, dict):
-            if all(isinstance(v, dict) for v in obj.values()):
-                return {
-                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
-                }
-            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
-        return {"null": {"null": json.dumps(obj)}}
-
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a mapping."""
         raise TypeError(f"{self.__desc()} can't be converted into a dict")

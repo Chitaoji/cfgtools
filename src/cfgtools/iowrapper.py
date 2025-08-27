@@ -6,12 +6,13 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Self
 
 from htmlmaster import HTMLTreeMaker
 
-from .saver import ConfigSaver
+from .saver import ConfigSaver, FileFormatError
 from .tpl import (
     RETURN,
     YIELD,
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 
 NoneType = type(None)
 
-__all__ = ["FileFormatError"]
+__all__ = []
 
 
 SUFFIX_MAPPING = {
@@ -282,6 +283,26 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
+    def to_ini_dict(self) -> dict:
+        obj = self.unwrap()
+        if isinstance(obj, dict):
+            if all(isinstance(v, dict) for v in obj.values()):
+                return {
+                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
+                }
+            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
+        return {"null": {"null": json.dumps(obj)}}
+
+    def to_toml_dict(self) -> dict:
+        obj = self.unwrap()
+        if isinstance(obj, dict):
+            if all(isinstance(v, dict) for v in obj.values()):
+                return {
+                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
+                }
+            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
+        return {"null": {"null": json.dumps(obj)}}
+
 
 class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
     """A wrapper for reading and writing config files."""
@@ -371,7 +392,3 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
             if searched := x.search(template):
                 return searched
         return None
-
-
-class FileFormatError(Exception):
-    """Raised if the file format is not supported."""

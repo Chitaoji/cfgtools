@@ -17,7 +17,8 @@ import yaml
 from yaml import MarkedYAMLError
 from yaml.reader import ReaderError
 
-from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
+from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper
+from .saver import FileFormatError
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, UnwrappedDataObj
