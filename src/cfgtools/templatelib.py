@@ -6,7 +6,6 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
-import json
 import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self
@@ -90,6 +89,9 @@ class ConfigTemplate:
 
     def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
         raise TypeError(f"{self.__desc()} does not support item assignment")
+
+    def __delitem__(self, key: "BasicObj", /) -> None:
+        raise TypeError(f"cannot delete {self.__desc()}")
 
     def __repr__(self) -> str:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
@@ -303,6 +305,9 @@ class DictConfigTemplate(ConfigTemplate):
         else:
             self.__obj[key] = self.constructor(value)
 
+    def __delitem__(self, key: "BasicObj", /) -> None:
+        del self.__obj[key]
+
     def __len__(self) -> int:
         return len(self.__obj)
 
@@ -424,6 +429,15 @@ class ListConfigTemplate(ConfigTemplate):
 
     def __getitem__(self, key: int, /) -> Self:
         return self.__obj[key]
+
+    def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
+        if isinstance(value, self.constructor):
+            self.__obj[key] = value
+        else:
+            self.__obj[key] = self.constructor(value)
+
+    def __delitem__(self, key: "BasicObj", /) -> None:
+        del self.__obj[key]
 
     def __len__(self) -> int:
         return len(self.__obj)
