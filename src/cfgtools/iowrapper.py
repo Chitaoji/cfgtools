@@ -32,6 +32,7 @@ __all__ = ["FileFormatError"]
 SUFFIX_MAPPING = {
     ".yaml": "yaml",
     ".yml": "yaml",
+    ".toml": "toml",
     ".pickle": "pickle",
     ".pkl": "pickle",
     ".json": "json",
@@ -42,6 +43,7 @@ SUFFIX_MAPPING = {
 FORMAT_MAPPING = {
     "yaml": "yaml",
     "yml": "yaml",
+    "toml": "toml",
     "pickle": "pickle",
     "pkl": "pickle",
     "json": "json",

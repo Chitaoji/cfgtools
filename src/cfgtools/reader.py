@@ -12,6 +12,7 @@ from configparser import ConfigParser, MissingSectionHeaderError, ParsingError
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
+import toml
 import yaml
 from yaml import MarkedYAMLError
 from yaml.reader import ReaderError
@@ -152,6 +153,32 @@ def read_ini(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrappe
     return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
 
 
+def read_toml(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
+    """
+    Read a toml file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the toml file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    with open(path, "r", encoding=encoding) as f:
+        obj = toml.load(f)
+    if len(obj) == 1 and "null" in obj:
+        obj = obj["null"]
+    return ConfigIOWrapper(obj, "toml", path=path, encoding=encoding)
+
+
 def read_text(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read plain text from a text file.
@@ -215,6 +242,7 @@ class ConfigReader:
         "ini": read_ini,
         "json": read_json,
         "yaml": read_yaml,
+        "toml": read_toml,
         "text": read_text,
         "bytes": read_bytes,
     }
@@ -246,6 +274,7 @@ class ConfigReader:
             cls.__try_ini,
             cls.__try_json,
             cls.__try_yaml,
+            cls.__try_toml,
             cls.__try_text,
         )
         for m in try_methods:
@@ -287,6 +316,15 @@ class ConfigReader:
     ) -> ConfigIOWrapper | None:
         try:
             return read_yaml(path, encoding=encoding)
+        except (ReaderError, MarkedYAMLError):
+            return None
+
+    @staticmethod
+    def __try_toml(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        try:
+            return read_toml(path, encoding=encoding)
         except (ReaderError, MarkedYAMLError):
             return None
 
