@@ -8,7 +8,12 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import pickle
-from configparser import ConfigParser, MissingSectionHeaderError, ParsingError
+from configparser import (
+    ConfigParser,
+    DuplicateSectionError,
+    MissingSectionHeaderError,
+    ParsingError,
+)
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
@@ -29,6 +34,7 @@ __all__ = [
     "read_pickle",
     "read_json",
     "read_ini",
+    "read_toml",
     "read_text",
     "read_bytes",
 ]
@@ -299,7 +305,7 @@ class ConfigReader:
     ) -> ConfigIOWrapper | None:
         try:
             return read_ini(path, encoding=encoding)
-        except (MissingSectionHeaderError, ParsingError):
+        except (MissingSectionHeaderError, ParsingError, DuplicateSectionError):
             return None
 
     @staticmethod

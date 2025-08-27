@@ -28,15 +28,15 @@ class ConfigSaver:
 
     def unwrap(self) -> "UnwrappedDataObj":
         """Returns the unwrapped config data."""
-        return NotImplemented
+        raise NotImplementedError()
 
     def to_ini_dict(self) -> dict:
         """Reformat the config object with `.ini` format, and returns a dict."""
-        return NotImplemented
+        raise NotImplementedError()
 
     def to_toml_dict(self) -> dict:
         """Reformat the config object with `.toml` format, and returns a dict."""
-        return NotImplemented
+        raise NotImplementedError()
 
     def to_yaml(
         self, path: str | Path | None = None, /, encoding: str | None = None
@@ -60,7 +60,11 @@ class ConfigSaver:
     def to_ini(
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
-        """Save the config in a ini file. See `self.save()` for more details."""
+        """
+        Save the config in a ini file. May lose infomation to meet the
+        requirements of ini format. See `self.save()` for more details.
+
+        """
         parser = ConfigParser()
         parser.read_dict(self.to_ini_dict())
         with open(path, "w", encoding=encoding) as f:
@@ -69,7 +73,11 @@ class ConfigSaver:
     def to_toml(
         self, path: str | Path | None = None, /, encoding: str | None = None
     ) -> None:
-        """Save the config in a toml file. See `self.save()` for more details."""
+        """
+        Save the config in a toml file. May lose infomation to meet the
+        requirements of toml format. See `self.save()` for more details.
+
+        """
         with open(path, "w", encoding=encoding) as f:
             toml.dump(self.to_toml_dict(), f)
 

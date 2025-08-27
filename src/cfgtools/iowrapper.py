@@ -23,7 +23,7 @@ from .tpl import (
 )
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, DataObj
+    from ._typing import ConfigFileFormat, DataObj, UnwrappedDataObj
 
 NoneType = type(None)
 
@@ -295,13 +295,24 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
 
     def to_toml_dict(self) -> dict:
         obj = self.unwrap()
-        if isinstance(obj, dict):
-            if all(isinstance(v, dict) for v in obj.values()):
-                return {
-                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
-                }
-            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
-        return {"null": {"null": json.dumps(obj)}}
+        if not isinstance(obj, dict):
+            obj = {"null": obj}
+        return _to_toml(obj)
+
+
+def _to_toml(obj: "UnwrappedDataObj") -> "UnwrappedDataObj":
+    if isinstance(obj, dict):
+        return {k: _to_toml(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        type_list = [type(x) for x in obj]
+        if dict in type_list:
+            if all(t is dict for t in type_list):
+                return [_to_toml(x) for x in obj]
+            return [
+                _to_toml(list(x)) if isinstance(x, dict) else _to_toml(x) for x in obj
+            ]
+        return [_to_toml(x) for x in obj]
+    return obj
 
 
 class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
