@@ -45,7 +45,7 @@ lazyr.register(".test_case")
 
 # pylint: disable=wrong-import-position
 from . import core, iowrapper, reader, test_case, tpl
-from .__version__ import __version__
+from ._version import __version__
 from .core import *
 from .iowrapper import *
 from .reader import *
