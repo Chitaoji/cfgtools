@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
 import yaml
-from yaml.scanner import ScannerError
+from yaml import MarkedYAMLError
+from yaml.reader import ReaderError
 
 from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
 
@@ -286,9 +287,7 @@ class ConfigReader:
     ) -> ConfigIOWrapper | None:
         try:
             return read_yaml(path, encoding=encoding)
-        except yaml.reader.ReaderError:
-            return None
-        except ScannerError:
+        except (ReaderError, MarkedYAMLError):
             return None
 
     @staticmethod
