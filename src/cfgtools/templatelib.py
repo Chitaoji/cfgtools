@@ -71,13 +71,13 @@ class ConfigTemplate(BasicWrapper):
         return wrapper.copy()
 
     def mark_as_deleted(self) -> None:
-        raise TypeError("cannot delete a template")
+        raise TypeError("cannot modify a template")
 
     def mark_as_added(self) -> None:
-        raise TypeError("cannot delete a template")
+        raise TypeError("cannot modify a template")
 
     def mark_as_replaced(self, value: "BasicWrapper", /) -> None:
-        raise TypeError("cannot replace a template")
+        raise TypeError("cannot modify a template")
 
 
 class DictConfigTemplate(ConfigTemplate, DictBasicWrapper):
