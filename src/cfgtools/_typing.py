@@ -24,4 +24,4 @@ DataObj = dict[BasicObj, "DataObj"] | list["DataObj"] | BasicObj | ConfigTemplat
 ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
 ]
-ColorScheme = Literal["dark", "modern", "high-intensty", "no-color"]
+ColorScheme = Literal["dark", "modern", "high-intensty"]

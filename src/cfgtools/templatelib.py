@@ -129,27 +129,24 @@ class ConfigTemplate:
     def __eq__(self, value: Self, /) -> bool:
         return isinstance(value, self.__class__) and self.unwrap() == value.unwrap()
 
-    def repr(self, level: int = 0, /) -> str:
-        """
-        Represent self.
-
-        Parameters
-        ----------
-        level : int, optional
-            Depth level, by default 0.
-
-        Returns
-        -------
-        str
-            A representation of self.
-
-        """
+    def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
+        """Represent self."""
         _ = level
-        return repr(self.__obj)
+        string = repr(self.__obj)
+        if is_change_view:
+            match self.__status:
+                case "a" | "r":
+                    return f"\033[48;5;028m{string}\033[0m"
+                case "d":
+                    return f"\033[48;5;088m{string}\033[0m"
+                case _:
+                    return string
+        return string
 
-    def view_change(self, color_scheme: "ColorScheme" = "no-color") -> "ChangeView":
+    def view_change(self, color_scheme: "ColorScheme" = "dark") -> "ChangeView":
         """View the change of self since initialized."""
-        return ChangeView(self.repr(), self.to_html())
+        _ = color_scheme
+        return ChangeView(self.repr(0, True), self.to_html())
 
     def keys(self) -> "Iterable[BasicObj]":
         """If the data is a mapping, provide a view of its wrapped keys."""
@@ -305,6 +302,7 @@ class ConfigTemplate:
         if self.is_template():
             raise TypeError("cannot replace a template")
         self.__status = "r"
+        value.mark_as_deleted()
         self.__replaced_value = value
 
     def is_deleted(self) -> bool:
@@ -629,10 +627,13 @@ class ChangeView:
         self.htmlmaker = htmlmaker
 
     def __repr__(self) -> str:
-        return self.repr_str
+        return f"cfgtools.template({self.repr_str})"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         return {"text/html": self.htmlmaker.make()}
+
+    def __str__(self) -> str:
+        return self.repr_str
 
 
 def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
@@ -645,7 +646,7 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
         case "high-intensty":
             return ["#505050", "#701414", "#147014"]
         case _:
-            return ["#505050", "#505050", "#505050"]
+            raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
 
 def _sep(level: int) -> str:
