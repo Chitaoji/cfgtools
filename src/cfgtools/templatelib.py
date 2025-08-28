@@ -15,7 +15,7 @@ from htmlmaster import HTMLTreeMaker
 from .css import TREE_CSS_STYLE
 
 if TYPE_CHECKING:
-    from ._typing import BasicObj, DataObj, UnwrappedDataObj
+    from ._typing import BasicObj, ColorScheme, DataObj, UnwrappedDataObj
     from .iowrapper import ConfigIOWrapper
 
 NoneType = type(None)
@@ -153,7 +153,7 @@ class ConfigTemplate:
         _ = level
         return repr(self.__obj)
 
-    def view_change(self) -> str:
+    def view_change(self, color_scheme: "ColorScheme") -> str:
         """View the change of self since initialized."""
         return repr(self.__obj)
 
@@ -619,6 +619,19 @@ class ListConfigTemplate(ConfigTemplate):
                 new_data.append(xt.fill(constructor))
 
         return constructor(new_data)
+
+
+def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
+    """Get background colors."""
+    match color_scheme:
+        case "dark":
+            return ["#505050", "#4d2f2f", "#2f4d2f"]
+        case "modern":
+            return ["#505050", "#701414", "#4e5d2d"]
+        case "high-intensty":
+            return ["#505050", "#701414", "#147014"]
+        case _:
+            return ["#505050", "#505050", "#505050"]
 
 
 def _sep(level: int) -> str:
