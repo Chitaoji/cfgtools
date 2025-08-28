@@ -305,11 +305,12 @@ class ConfigTemplate:
             raise TypeError("cannot delete a template")
         self.__status = "a"
 
-    def mark_as_replaced(self, new_value: Self, /) -> None:
+    def mark_as_replaced(self, value: Self, /) -> None:
         """Mark self as replaced."""
         if self.is_template():
             raise TypeError("cannot replace a template")
         self.__status = "r"
+        self.__replaced_value = value
 
     def is_deleted(self) -> bool:
         """If self is marked as deleted."""
@@ -354,11 +355,11 @@ class DictConfigTemplate(ConfigTemplate):
     def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
         if not isinstance(value, self.constructor):
             value = self.constructor(value)
-        value.mark_as_added()
         if key in self.__obj:
-            self.__obj[key].mark_as_replaced(value)
+            value.mark_as_replaced(self.__obj[key])
         else:
-            self.__obj[key] = value
+            value.mark_as_added()
+        self.__obj[key] = value
 
     def __delitem__(self, key: "BasicObj", /) -> None:
         self.__obj[key].mark_as_deleted()
@@ -498,11 +499,11 @@ class ListConfigTemplate(ConfigTemplate):
     def __setitem__(self, key: int, value: "DataObj", /) -> None:
         if not isinstance(value, self.constructor):
             value = self.constructor(value)
-        value.mark_as_added()
         if key in self.__obj:
-            self.__obj[key].mark_as_replaced(value)
+            value.mark_as_replaced(self.__obj[key])
         else:
-            self.__obj[key] = value
+            value.mark_as_added()
+        self.__obj[key] = value
 
     def __delitem__(self, key: int, /) -> None:
         self.__obj[key].mark_as_deleted()
