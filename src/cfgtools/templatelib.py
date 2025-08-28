@@ -8,7 +8,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self
+from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Literal, Self
 
 from htmlmaster import HTMLTreeMaker
 
@@ -79,6 +79,7 @@ class ConfigTemplate:
         return cls.constructor.__new__(new_class)
 
     def __init__(self, data: "DataObj") -> None:
+        self.__status: Literal["", "d", "a"] = ""
         if isinstance(data, self.__class__):
             return
         if not isinstance(data, (dict, list)):
@@ -273,6 +274,14 @@ class ConfigTemplate:
                 or True
             )
         return recorder
+
+    def mark_as_deleted(self) -> None:
+        """Mark self as deleted."""
+        self.__status = "d"
+
+    def is_deleted(self) -> bool:
+        """If self is marked as deleted."""
+        return self.__status == "d"
 
     def __desc(self) -> str:
         return f"config object of type {self.unwrap_top_level().__class__.__name__!r}"
