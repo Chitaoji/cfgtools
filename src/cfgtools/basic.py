@@ -171,8 +171,12 @@ class BasicWrapper:
         return self.__obj
 
     def isinstance(self, cls: type | list[type]) -> bool:
-        """Returns is self instance of cls."""
+        """Returns whether config is an instance of cls."""
         return isinstance(self.__obj, cls)
+
+    def get_type(self) -> type:
+        """Config type."""
+        return self.__obj.__class__
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a mapping."""
@@ -261,7 +265,7 @@ class BasicWrapper:
         return recorder
 
     def __desc(self) -> str:
-        return f"config object of type {self.unwrap_top_level().__class__.__name__!r}"
+        return f"config of {self.get_type()}"
 
 
 class DictBasicWrapper(BasicWrapper):
@@ -357,6 +361,9 @@ class DictBasicWrapper(BasicWrapper):
 
     def isinstance(self, cls: type) -> bool:
         return isinstance(self.__obj, cls)
+
+    def get_type(self) -> type:
+        return self.__obj.__class__
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.unwrap()
@@ -482,6 +489,9 @@ class ListBasicWrapper(BasicWrapper):
 
     def isinstance(self, cls: type) -> bool:
         return isinstance(self.__obj, cls)
+
+    def get_type(self) -> type:
+        return self.__obj.__class__
 
     def to_list(self) -> list["UnwrappedDataObj"]:
         return self.unwrap()
