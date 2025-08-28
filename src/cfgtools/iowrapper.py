@@ -166,17 +166,16 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        unwrapped = template.unwrap_top_level()
 
-        if isinstance(unwrapped, (dict, list)):
+        if template.isinstance((dict, list)):
             return None
-        if isinstance(unwrapped, type):
-            if self.isinstance(unwrapped):
+        if template.isinstance(type):
+            if self.isinstance(template.unwrap_top_level()):
                 return self.copy()
-        elif isinstance(unwrapped, Callable):
-            if unwrapped(self):
+        elif template.isinstance(Callable):
+            if template.unwrap_top_level()(self):
                 return self.copy()
-        elif self.unwrap_top_level() == unwrapped:
+        elif self.unwrap_top_level() == template.unwrap_top_level():
             return self.copy()
 
         if recorder:
@@ -328,15 +327,14 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        unwrapped = template.unwrap_top_level()
 
-        if matched := super().match(unwrapped):
+        if matched := super().match(template):
             return matched
-        if not isinstance(unwrapped, dict):
+        if not template.isinstance(dict):
             return None
 
         new_data = {}
-        for kt, vt in unwrapped.items():
+        for kt, vt in template.items():
             for k, v in self.items():
                 if self.constructor(k).match(kt) and (matched := v.match(vt)):
                     new_data[k] = matched
@@ -373,15 +371,14 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        unwrapped = template.unwrap_top_level()
 
-        if matched := super().match(unwrapped):
+        if matched := super().match(template):
             return matched
-        if not isinstance(unwrapped, list):
+        if not template.isinstance(list):
             return None
 
         new_data = []
-        for xt in unwrapped:
+        for xt in template:
             for x in self:
                 if matched := x.match(xt):
                     new_data.append(matched)

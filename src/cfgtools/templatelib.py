@@ -179,7 +179,7 @@ class ConfigTemplate:
         """Returns the data, with only the top level unwrapped."""
         return self.__obj
 
-    def isinstance(self, cls: type) -> bool:
+    def isinstance(self, cls: type | list[type]) -> bool:
         """Returns is self instance of cls."""
         return isinstance(self.__obj, cls)
 
