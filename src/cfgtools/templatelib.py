@@ -90,6 +90,7 @@ class ConfigTemplate:
 
     def __init__(self, data: "DataObj") -> None:
         self.__status: Literal["", "d", "a", "r"] = ""
+        self.__replaced_value = None
         if isinstance(data, self.__class__):
             return
         if not isinstance(data, (dict, list)):
@@ -305,7 +306,7 @@ class ConfigTemplate:
             raise TypeError("cannot delete a template")
         self.__status = "a"
 
-    def mark_as_replaced(self, value: Self, /) -> None:
+    def mark_as_replaced(self, value: "ConfigTemplate", /) -> None:
         """Mark self as replaced."""
         if self.is_template():
             raise TypeError("cannot replace a template")
@@ -323,6 +324,12 @@ class ConfigTemplate:
     def is_template(self) -> bool:
         """If self is a template."""
         return "Template" in self.__class__.__name__
+
+    def replaced_value(self) -> "ConfigTemplate | None":
+        """Return the replaced value if exists."""
+        if self.__status == "r":
+            return self.__replaced_value
+        return None
 
     def __desc(self) -> str:
         return f"config object of type {self.unwrap_top_level().__class__.__name__!r}"
