@@ -79,7 +79,7 @@ class ConfigTemplate:
         return cls.constructor.__new__(new_class)
 
     def __init__(self, data: "DataObj") -> None:
-        self.__status: Literal["", "d", "a"] = ""
+        self.__status: Literal["", "d", "a", "r"] = ""
         if isinstance(data, self.__class__):
             return
         if not isinstance(data, (dict, list)):
@@ -158,11 +158,11 @@ class ConfigTemplate:
         """If the data is a mapping, provide a view of its wrapped items."""
         raise TypeError(f"{self.__desc()} has no method items()")
 
-    def append(self, __object: "DataObj") -> None:
+    def append(self, obj: "DataObj", /) -> None:
         """If the data is a list, append to its end."""
         raise TypeError(f"{self.__desc()} has no method append()")
 
-    def extend(self, __object: "Iterable[DataObj]") -> None:
+    def extend(self, iterable: "Iterable[DataObj]", /) -> None:
         """If the data is a list, extend it."""
         raise TypeError(f"{self.__desc()} has no method extend()")
 
@@ -178,6 +178,10 @@ class ConfigTemplate:
     def unwrap_top_level(self) -> "DataObj":
         """Returns the data, with only the top level unwrapped."""
         return self.__obj
+
+    def isinstance(self, cls: type) -> bool:
+        """Returns is self instance of cls."""
+        return isinstance(self.__obj, cls)
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a mapping."""
@@ -240,9 +244,7 @@ class ConfigTemplate:
     ) -> "ConfigIOWrapper":
         """Fill the template with an iowrapper."""
         if isinstance(self.__obj, type):
-            if wrapper is not None and isinstance(
-                wrapper.unwrap_top_level(), self.__obj
-            ):
+            if wrapper is not None and wrapper.isinstance(self.__obj):
                 return wrapper.copy()
             return constructor(self.__obj())
         if isinstance(self.__obj, Callable):
@@ -279,13 +281,35 @@ class ConfigTemplate:
             )
         return recorder
 
-    def _mark_as_deleted(self) -> None:
+    def mark_as_deleted(self) -> None:
         """Mark self as deleted."""
+        if self.is_template():
+            raise TypeError("cannot delete a template")
         self.__status = "d"
+
+    def mark_as_added(self) -> None:
+        """Mark self as added."""
+        if self.is_template():
+            raise TypeError("cannot delete a template")
+        self.__status = "a"
+
+    def mark_as_replaced(self, new_value: Self, /) -> None:
+        """Mark self as replaced."""
+        if self.is_template():
+            raise TypeError("cannot replace a template")
+        self.__status = "r"
 
     def is_deleted(self) -> bool:
         """If self is marked as deleted."""
         return self.__status == "d"
+
+    def is_present(self) -> bool:
+        """If self is marked as deleted."""
+        return self.__status != "d"
+
+    def is_template(self) -> bool:
+        """If self is a template."""
+        return "Template" in self.__class__.__name__
 
     def __desc(self) -> str:
         return f"config object of type {self.unwrap_top_level().__class__.__name__!r}"
@@ -310,25 +334,33 @@ class DictConfigTemplate(ConfigTemplate):
         self.__obj = new_obj
 
     def __getitem__(self, key: "BasicObj", /) -> Self:
-        return self.__obj[key]
+        value = self.__obj[key]
+        if value.is_deleted():
+            raise KeyError(f"{key!r}")
+        return value
 
     def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
-        if isinstance(value, self.constructor):
-            self.__obj[key] = value
+        if not isinstance(value, self.constructor):
+            value = self.constructor(value)
+        value.mark_as_added()
+        if key in self.__obj:
+            self.__obj[key].mark_as_replaced(value)
         else:
-            self.__obj[key] = self.constructor(value)
+            self.__obj[key] = value
 
     def __delitem__(self, key: "BasicObj", /) -> None:
-        self.__obj[key]._mark_as_deleted()
+        self.__obj[key].mark_as_deleted()
 
     def __len__(self) -> int:
-        return len(self.__obj)
+        return len(self.unwrap_top_level())
 
     def __contains__(self, key: "BasicObj", /) -> bool:
-        return key in self.__obj
+        if key in self.__obj and self.__obj[key].is_present():
+            return True
+        return False
 
     def __iter__(self) -> Iterator["DataObj"]:
-        return iter(self.__obj)
+        return iter(self.unwrap_top_level())
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
@@ -357,19 +389,22 @@ class DictConfigTemplate(ConfigTemplate):
         return string
 
     def keys(self) -> Iterable["BasicObj"]:
-        return self.__obj.keys()
+        return self.unwrap_top_level().keys()
 
     def values(self) -> Iterable["ConfigTemplate"]:
-        return self.__obj.values()
+        return self.unwrap_top_level().values()
 
     def items(self) -> Iterable[tuple["BasicObj", "ConfigTemplate"]]:
-        return self.__obj.items()
+        return self.unwrap_top_level().items()
 
     def unwrap(self) -> "UnwrappedDataObj":
-        return {k: v.unwrap() for k, v in self.__obj.items() if not v.is_deleted()}
+        return {k: v.unwrap() for k, v in self.__obj.items() if v.is_present()}
 
     def unwrap_top_level(self) -> "DataObj":
-        return self.__obj
+        return {k: v for k, v in self.__obj.items() if v.is_present()}
+
+    def isinstance(self, cls: type) -> bool:
+        return isinstance(self.__obj, cls)
 
     def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.unwrap()
@@ -378,7 +413,7 @@ class DictConfigTemplate(ConfigTemplate):
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
-        for k, v in self.__obj.items():
+        for k, v in self.items():
             node = v.get_html_node()
             if node.has_child():
                 node.setval(f"{k!r}: {node.getval()}")
@@ -395,7 +430,7 @@ class DictConfigTemplate(ConfigTemplate):
         constructor: type["ConfigIOWrapper"],
         wrapper: "ConfigIOWrapper | None" = None,
     ) -> "ConfigIOWrapper":
-        if not isinstance(wrapper.unwrap_top_level(), dict):
+        if not wrapper.isinstance(dict):
             return constructor({k: v.fill(constructor) for k, v in self.items()})
 
         new_data = {}
@@ -443,25 +478,31 @@ class ListConfigTemplate(ConfigTemplate):
         self.__obj = new_obj
 
     def __getitem__(self, key: int, /) -> Self:
-        return self.__obj[key]
+        value = self.__obj[key]
+        if value.is_deleted():
+            raise KeyError(f"{key!r}")
+        return value
 
-    def __setitem__(self, key: "BasicObj", value: "DataObj", /) -> None:
-        if isinstance(value, self.constructor):
-            self.__obj[key] = value
+    def __setitem__(self, key: int, value: "DataObj", /) -> None:
+        if not isinstance(value, self.constructor):
+            value = self.constructor(value)
+        value.mark_as_added()
+        if key in self.__obj:
+            self.__obj[key].mark_as_replaced(value)
         else:
-            self.__obj[key] = self.constructor(value)
+            self.__obj[key] = value
 
     def __delitem__(self, key: int, /) -> None:
-        self.__obj[key]._mark_as_deleted()
+        self.__obj[key].mark_as_deleted()
 
     def __len__(self) -> int:
-        return len(self.__obj)
+        return len(self.unwrap_top_level())
 
-    def __contains__(self, key: "BasicObj", /) -> bool:
-        return key in self.__obj
+    def __contains__(self, value: "BasicObj", /) -> bool:
+        return value in self.unwrap_top_level()
 
     def __iter__(self) -> Iterator["DataObj"]:
-        return iter(self.__obj)
+        return iter(self.unwrap_top_level())
 
     def repr(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
@@ -486,23 +527,27 @@ class ListConfigTemplate(ConfigTemplate):
         string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
 
-    def append(self, __object: "DataObj") -> None:
-        if isinstance(__object, self.constructor):
-            self.__obj.append(__object)
-        else:
-            self.__obj.append(self.constructor(__object))
+    def append(self, obj: "DataObj", /) -> None:
+        if not isinstance(obj, self.constructor):
+            obj = self.constructor(obj)
+        obj.mark_as_added()
+        self.__obj.append(obj)
 
-    def extend(self, __iterable: Iterable["DataObj"]) -> None:
-        if isinstance(__iterable, self.__class__):
-            self.__obj.extend(list(__iterable))
-        else:
-            self.__obj.extend(list(self.constructor(list(__iterable))))
+    def extend(self, iterable: Iterable["DataObj"], /) -> None:
+        if not isinstance(iterable, self.__class__):
+            iterable = self.constructor(list(iterable))
+        for x in iterable:
+            x.mark_as_added()
+        self.__obj.extend(list(iterable))
 
     def unwrap(self) -> "UnwrappedDataObj":
-        return [x.unwrap() for x in self.__obj if not x.is_deleted()]
+        return [x.unwrap() for x in self.__obj if x.is_present()]
 
     def unwrap_top_level(self) -> "DataObj":
-        return self.__obj
+        return [x for x in self.__obj if x.is_present()]
+
+    def isinstance(self, cls: type) -> bool:
+        return isinstance(self.__obj, cls)
 
     def to_list(self) -> list["UnwrappedDataObj"]:
         return self.unwrap()
@@ -511,7 +556,7 @@ class ListConfigTemplate(ConfigTemplate):
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
-        for x in self.__obj:
+        for x in self:
             node = x.get_html_node()
             if node.has_child():
                 node.setval(f"{node.getval()}")
@@ -524,7 +569,7 @@ class ListConfigTemplate(ConfigTemplate):
         return maker
 
     def has_flag(self, flag: Flag, /) -> bool:
-        return any(x == flag for x in self)
+        return any(x.has_flag() for x in self)
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
@@ -542,7 +587,7 @@ class ListConfigTemplate(ConfigTemplate):
         constructor: type["ConfigIOWrapper"],
         wrapper: "ConfigIOWrapper | None" = None,
     ) -> "ConfigIOWrapper":
-        if not isinstance(wrapper.unwrap_top_level(), list):
+        if not wrapper.isinstance(list):
             return constructor([x.fill(constructor) for x in self])
 
         new_data = []

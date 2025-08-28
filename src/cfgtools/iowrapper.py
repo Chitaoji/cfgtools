@@ -171,7 +171,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         if isinstance(unwrapped, (dict, list)):
             return None
         if isinstance(unwrapped, type):
-            if isinstance(self.unwrap_top_level(), unwrapped):
+            if self.isinstance(unwrapped):
                 return self.copy()
         elif isinstance(unwrapped, Callable):
             if unwrapped(self):
