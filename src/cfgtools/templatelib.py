@@ -142,6 +142,24 @@ class ConfigTemplate:
         _ = level
         return repr(self.__obj)
 
+    def view_change(self, level: int = 0, /) -> str:
+        """
+        View the change of self since initialized.
+
+        Parameters
+        ----------
+        level : int, optional
+            Depth level, by default 0.
+
+        Returns
+        -------
+        str
+            A representation of self.
+
+        """
+        _ = level
+        return repr(self.__obj)
+
     def keys(self) -> "Iterable[BasicObj]":
         """If the data is a mapping, provide a view of its wrapped keys."""
         raise TypeError(f"{self.__desc()} has no method keys()")
@@ -275,7 +293,7 @@ class ConfigTemplate:
             )
         return recorder
 
-    def mark_as_deleted(self) -> None:
+    def _mark_as_deleted(self) -> None:
         """Mark self as deleted."""
         self.__status = "d"
 
@@ -295,7 +313,7 @@ class DictConfigTemplate(ConfigTemplate):
 
     def __init__(self, obj: "DataObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
-        new_obj: dict["BasicObj", "DataObj"] = {}
+        new_obj: dict["BasicObj", ConfigTemplate] = {}
         for k, v in obj.items():
             if not isinstance(k, self.valid_types):
                 raise TypeError(f"invalid type of key: {k.__class__.__name__!r}")
@@ -315,7 +333,7 @@ class DictConfigTemplate(ConfigTemplate):
             self.__obj[key] = self.constructor(value)
 
     def __delitem__(self, key: "BasicObj", /) -> None:
-        del self.__obj[key]
+        self.__obj[key]._mark_as_deleted()
 
     def __len__(self) -> int:
         return len(self.__obj)
@@ -327,6 +345,30 @@ class DictConfigTemplate(ConfigTemplate):
         return iter(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
+        seps = _sep(level + 1)
+        string = "{\n"
+        lines: list[str] = []
+        max_line_width = self.get_max_line_width()
+        for k, v in self.__obj.items():
+            _head = lines[-1] if lines else ""
+            _key = f"{k!r}: "
+            _flat = repr(v.unwrap())
+            if lines and (len(_head) + len(_key) + len(_flat) + 2 <= max_line_width):
+                lines[-1] += " " + _key + _flat + ","
+            elif len(seps) + len(_key) + len(_flat) < max_line_width:
+                lines.append(seps + _key + _flat + ",")
+            else:
+                _child = v.repr(level + 1)
+                if lines and (
+                    len(_head) + len(_key) + len(_child) + 2 <= max_line_width
+                ):
+                    lines[-1] += " " + _key + _child + ","
+                else:
+                    lines.append(seps + _key + _child + ",")
+        string += "\n".join(lines) + f"\n{_sep(level)}" "}"
+        return string
+
+    def view_change(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
         string = "{\n"
         lines: list[str] = []
@@ -428,7 +470,7 @@ class ListConfigTemplate(ConfigTemplate):
 
     def __init__(self, obj: "DataObj", *args, **kwargs) -> None:
         super().__init__(obj, *args, **kwargs)
-        new_obj: list["DataObj"] = []
+        new_obj: list[ConfigTemplate] = []
         for x in obj:
             if isinstance(x, self.constructor):
                 new_obj.append(x)
@@ -445,8 +487,8 @@ class ListConfigTemplate(ConfigTemplate):
         else:
             self.__obj[key] = self.constructor(value)
 
-    def __delitem__(self, key: "BasicObj", /) -> None:
-        del self.__obj[key]
+    def __delitem__(self, key: int, /) -> None:
+        self.__obj[key]._mark_as_deleted()
 
     def __len__(self) -> int:
         return len(self.__obj)
@@ -458,6 +500,27 @@ class ListConfigTemplate(ConfigTemplate):
         return iter(self.__obj)
 
     def repr(self, level: int = 0, /) -> str:
+        seps = _sep(level + 1)
+        string = "[\n"
+        lines: list[str] = []
+        max_line_width = self.get_max_line_width()
+        for x in self.__obj:
+            _head = lines[-1] if lines else ""
+            _flat = repr(x.unwrap())
+            if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
+                lines[-1] += " " + _flat + ","
+            elif len(_head) + len(_flat) < max_line_width:
+                lines.append(seps + _flat + ",")
+            else:
+                _child = x.repr(level + 1)
+                if lines and (len(_head) + len(_child) + 2 <= max_line_width):
+                    lines[-1] += " " + _child + ","
+                else:
+                    lines.append(seps + _child + ",")
+        string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
+        return string
+
+    def view_change(self, level: int = 0, /) -> str:
         seps = _sep(level + 1)
         string = "[\n"
         lines: list[str] = []
