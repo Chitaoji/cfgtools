@@ -58,7 +58,17 @@ class ConfigTemplate:
 
     """
 
-    valid_types = (str, int, float, bool, NoneType, type, Callable, Flag)
+    valid_types = (
+        str,
+        int,
+        float,
+        bool,
+        NoneType,
+        type,
+        Callable,
+        Flag,
+        type(Ellipsis),
+    )
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigTemplate,
@@ -265,6 +275,8 @@ class ConfigTemplate:
         """Replace all the template flags with callables."""
         if recorder is None:
             recorder = {}
+        if self.__obj is Ellipsis:
+            self.__obj = ANY
         if not isinstance(self.__obj, Flag):
             return recorder
 
