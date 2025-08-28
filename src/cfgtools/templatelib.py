@@ -106,18 +106,12 @@ class ConfigTemplate:
         raise TypeError(f"cannot delete {self.__desc()}")
 
     def __repr__(self) -> str:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
-            s = flat
-        else:
-            s = self.repr()
-        return f"cfgtools.template({s})"
+        return f"cfgtools.template({self.repr()})"
 
     def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
         return {"text/html": self.to_html().make()}
 
     def __str__(self) -> str:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
-            return flat
         return self.repr()
 
     def __len__(self) -> int:
@@ -153,9 +147,9 @@ class ConfigTemplate:
         _ = level
         return repr(self.__obj)
 
-    def view_change(self, color_scheme: "ColorScheme") -> str:
+    def view_change(self, color_scheme: "ColorScheme" = "no-color") -> "ChangeView":
         """View the change of self since initialized."""
-        return repr(self.__obj)
+        return ChangeView(self.repr(), self.to_html())
 
     def keys(self) -> "Iterable[BasicObj]":
         """If the data is a mapping, provide a view of its wrapped keys."""
@@ -383,6 +377,9 @@ class DictConfigTemplate(ConfigTemplate):
         return iter(self.unwrap_top_level())
 
     def repr(self, level: int = 0, /) -> str:
+        if level == 0:
+            if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+                return flat
         seps = _sep(level + 1)
         string = "{\n"
         lines: list[str] = []
@@ -525,6 +522,9 @@ class ListConfigTemplate(ConfigTemplate):
         return iter(self.unwrap_top_level())
 
     def repr(self, level: int = 0, /) -> str:
+        if level == 0:
+            if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+                return flat
         seps = _sep(level + 1)
         string = "[\n"
         lines: list[str] = []
@@ -619,6 +619,20 @@ class ListConfigTemplate(ConfigTemplate):
                 new_data.append(xt.fill(constructor))
 
         return constructor(new_data)
+
+
+class ChangeView:
+    """Views change."""
+
+    def __init__(self, repr_str: str, htmlmaker: HTMLTreeMaker) -> str:
+        self.repr_str = repr_str
+        self.htmlmaker = htmlmaker
+
+    def __repr__(self) -> str:
+        return self.repr_str
+
+    def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
+        return {"text/html": self.htmlmaker.make()}
 
 
 def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
