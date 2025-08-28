@@ -142,22 +142,8 @@ class ConfigTemplate:
         _ = level
         return repr(self.__obj)
 
-    def view_change(self, level: int = 0, /) -> str:
-        """
-        View the change of self since initialized.
-
-        Parameters
-        ----------
-        level : int, optional
-            Depth level, by default 0.
-
-        Returns
-        -------
-        str
-            A representation of self.
-
-        """
-        _ = level
+    def view_change(self) -> str:
+        """View the change of self since initialized."""
         return repr(self.__obj)
 
     def keys(self) -> "Iterable[BasicObj]":
@@ -350,30 +336,8 @@ class DictConfigTemplate(ConfigTemplate):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
-            _head = lines[-1] if lines else ""
-            _key = f"{k!r}: "
-            _flat = repr(v.unwrap())
-            if lines and (len(_head) + len(_key) + len(_flat) + 2 <= max_line_width):
-                lines[-1] += " " + _key + _flat + ","
-            elif len(seps) + len(_key) + len(_flat) < max_line_width:
-                lines.append(seps + _key + _flat + ",")
-            else:
-                _child = v.repr(level + 1)
-                if lines and (
-                    len(_head) + len(_key) + len(_child) + 2 <= max_line_width
-                ):
-                    lines[-1] += " " + _key + _child + ","
-                else:
-                    lines.append(seps + _key + _child + ",")
-        string += "\n".join(lines) + f"\n{_sep(level)}" "}"
-        return string
-
-    def view_change(self, level: int = 0, /) -> str:
-        seps = _sep(level + 1)
-        string = "{\n"
-        lines: list[str] = []
-        max_line_width = self.get_max_line_width()
-        for k, v in self.__obj.items():
+            if v.is_deleted():
+                continue
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
             _flat = repr(v.unwrap())
@@ -402,7 +366,7 @@ class DictConfigTemplate(ConfigTemplate):
         return self.__obj.items()
 
     def unwrap(self) -> "UnwrappedDataObj":
-        return {k: v.unwrap() for k, v in self.__obj.items()}
+        return {k: v.unwrap() for k, v in self.__obj.items() if not v.is_deleted()}
 
     def unwrap_top_level(self) -> "DataObj":
         return self.__obj
@@ -505,27 +469,8 @@ class ListConfigTemplate(ConfigTemplate):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
-            _head = lines[-1] if lines else ""
-            _flat = repr(x.unwrap())
-            if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
-                lines[-1] += " " + _flat + ","
-            elif len(_head) + len(_flat) < max_line_width:
-                lines.append(seps + _flat + ",")
-            else:
-                _child = x.repr(level + 1)
-                if lines and (len(_head) + len(_child) + 2 <= max_line_width):
-                    lines[-1] += " " + _child + ","
-                else:
-                    lines.append(seps + _child + ",")
-        string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
-        return string
-
-    def view_change(self, level: int = 0, /) -> str:
-        seps = _sep(level + 1)
-        string = "[\n"
-        lines: list[str] = []
-        max_line_width = self.get_max_line_width()
-        for x in self.__obj:
+            if x.is_deleted():
+                continue
             _head = lines[-1] if lines else ""
             _flat = repr(x.unwrap())
             if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
@@ -554,7 +499,7 @@ class ListConfigTemplate(ConfigTemplate):
             self.__obj.extend(list(self.constructor(list(__iterable))))
 
     def unwrap(self) -> "UnwrappedDataObj":
-        return [x.unwrap() for x in self.__obj]
+        return [x.unwrap() for x in self.__obj if not x.is_deleted()]
 
     def unwrap_top_level(self) -> "DataObj":
         return self.__obj
