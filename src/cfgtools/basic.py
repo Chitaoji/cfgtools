@@ -203,18 +203,25 @@ class BasicWrapper:
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
+    def mark_as_original(self) -> None:
+        """Mark self as original."""
+        self.__status = ""
+
     def mark_as_deleted(self) -> None:
         """Mark self as deleted."""
+        self.mark_as_original()
         self.__status = "d"
 
     def mark_as_added(self) -> None:
         """Mark self as added."""
+        self.mark_as_original()
         self.__status = "a"
 
     def mark_as_replaced(self, value: "BasicWrapper", /) -> None:
         """Mark self as replaced."""
-        if v := value.replaced_value():
-            self.__replaced_value = v
+        self.mark_as_original()
+        if r := value.replaced_value():
+            self.__replaced_value = r
         else:
             value.mark_as_deleted()
             self.__replaced_value = value
@@ -298,7 +305,10 @@ class DictBasicWrapper(BasicWrapper):
         if not isinstance(value, self.constructor):
             value = self.constructor(value)
         if key in self.__obj:
-            value.mark_as_replaced(self.__obj[key])
+            if r := self.__obj[key].replaced_value():
+                value.mark_as_replaced(r)
+            else:
+                value.mark_as_replaced(self.__obj[key])
         else:
             value.mark_as_added()
         self.__obj[key] = value
@@ -378,11 +388,11 @@ class DictBasicWrapper(BasicWrapper):
         for i, item in enumerate(self.__obj.items()):
             k, v = item
             _status = v.get_status()
-            _r = v.replaced_value().repr_flat(True)[1] if _status == "r" else ""
+            _lenr, _r = v.replaced_value().repr_flat() if _status == "r" else (0, "")
             _key = f"{k!r}: "
-            _lenflat, _flat = v.repr_flat(is_change_view)
+            _lenflat, _flat = v.repr_flat(True)
             if _status == "r":
-                _lenflat += len(_key) + len(_r) + 2
+                _lenflat += len(_key) + _lenr + 2
             if maxi <= 1:
                 lines.append(
                     colorful_console(f"{_key}{_flat}", _status, f"{_key}{_r}, ")
@@ -446,6 +456,21 @@ class DictBasicWrapper(BasicWrapper):
         maker.add("}", "t")
         return maker
 
+    def mark_as_deleted(self) -> None:
+        super().mark_as_deleted()
+        for v in self.values():
+            v.mark_as_original()
+
+    def mark_as_added(self) -> None:
+        super().mark_as_added()
+        for v in self.values():
+            v.mark_as_original()
+
+    def mark_as_original(self) -> None:
+        super().mark_as_original()
+        for v in self.values():
+            v.mark_as_original()
+
     def has_flag(self, flag: Flag, /) -> bool:
         return any(k == flag or v.has_flag(flag) for k, v in self.items())
 
@@ -486,7 +511,10 @@ class ListBasicWrapper(BasicWrapper):
     def __setitem__(self, key: int, value: "DataObj", /) -> None:
         if not isinstance(value, self.constructor):
             value = self.constructor(value)
-        value.mark_as_replaced(self.__obj[key])
+        if r := self.__obj[key].replaced_value():
+            value.mark_as_replaced(r)
+        else:
+            value.mark_as_replaced(self.__obj[key])
         self.__obj[key] = value
 
     def __delitem__(self, key: int, /) -> None:
@@ -553,10 +581,10 @@ class ListBasicWrapper(BasicWrapper):
         length = 0
         for i, x in enumerate(self.__obj):
             _status = x.get_status()
-            _r = x.replaced_value().repr_flat(True)[1] if _status == "r" else ""
-            _lenflat, _flat = x.repr_flat(is_change_view)
+            _lenr, _r = x.replaced_value().repr_flat() if _status == "r" else (0, "")
+            _lenflat, _flat = x.repr_flat(True)
             if _status == "r":
-                _lenflat += len(_r) + 2
+                _lenflat += _lenr + 2
             if maxi <= 1:
                 lines.append(colorful_console(_flat, _status, f"{_r}, "))
                 length += _lenflat
@@ -615,6 +643,21 @@ class ListBasicWrapper(BasicWrapper):
             maker.add(node)
         maker.add("]", "t")
         return maker
+
+    def mark_as_deleted(self) -> None:
+        super().mark_as_deleted()
+        for x in self:
+            x.mark_as_original()
+
+    def mark_as_added(self) -> None:
+        super().mark_as_added()
+        for x in self:
+            x.mark_as_original()
+
+    def mark_as_original(self) -> None:
+        super().mark_as_original()
+        for x in self:
+            x.mark_as_original()
 
     def has_flag(self, flag: Flag, /) -> bool:
         return any(x.has_flag() for x in self)
