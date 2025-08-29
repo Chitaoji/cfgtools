@@ -120,8 +120,7 @@ class BasicWrapper:
 
     def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
         """Represent self."""
-        _ = level, is_change_view
-        return repr(self.__obj)
+        return repr(self.__obj) if level >= 0 else self.repr_flat(is_change_view)
 
     def repr_flat(self, is_change_view: bool = False, /) -> tuple[int, str]:
         """Represent self in one line."""
@@ -229,15 +228,15 @@ class BasicWrapper:
         """If self is marked as deleted."""
         return self.__status != "d"
 
-    def is_added(self) -> bool:
-        """If self is marked as added."""
-        return self.__status == "a"
-
     def replaced_value(self) -> "BasicWrapper | None":
         """Return the replaced value if exists."""
         if self.__status == "r":
             return self.__replaced_value
         return None
+
+    def get_status(self) -> "WrapperStatus":
+        """Get status."""
+        return self.__status
 
     def has_flag(self, flag: Flag, /) -> bool:
         """Returns whether the template includes template flags."""
@@ -327,26 +326,36 @@ class DictBasicWrapper(BasicWrapper):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
-            _status = ""
-            if is_change_view:
-                if v.is_deleted():
-                    _status = "d"
-                elif v.is_added():
-                    _status = "a"
-            elif v.is_deleted():
-                continue
-            _head = lines[-1] if lines else ""
-            _key = f"{k!r}: "
-            _lenflat, _flat = v.repr_flat(is_change_view)
-            if lines and (len(_head) + len(_key) + _lenflat + 2 <= max_line_width):
-                lines[-1] += colorful_console(f" {_key}{_flat},", _status)
-            elif len(seps) + len(_key) + _lenflat < max_line_width:
-                lines.append(colorful_console(f"{seps}{_key}{_flat},", _status))
-            else:
-                _child = v.repr(level + 1, is_change_view)
-                lines.append(colorful_console(f"{seps}{_key}{_child},", _status))
+            self.__repr_line(k, v, is_change_view, seps, max_line_width, level, lines)
         string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}" "}"
         return string
+
+    def __repr_line(
+        self,
+        k: "BasicObj",
+        v: BasicWrapper,
+        is_change_view: bool,
+        seps: str,
+        max_line_width: int,
+        level: int,
+        lines: list[str],
+    ) -> None:
+        if is_change_view:
+            _status = v.get_status()
+        else:
+            if v.is_deleted():
+                return
+            _status = ""
+        _head = lines[-1] if lines else ""
+        _key = f"{k!r}: "
+        _lenflat, _flat = v.repr_flat(is_change_view)
+        if lines and (len(_head) + len(_key) + _lenflat + 2 <= max_line_width):
+            lines[-1] += colorful_console(f" {_key}{_flat},", _status)
+        elif len(seps) + len(_key) + _lenflat < max_line_width:
+            lines.append(colorful_console(f"{seps}{_key}{_flat},", _status))
+        else:
+            _child = v.repr(level + 1, is_change_view)
+            lines.append(colorful_console(f"{seps}{_key}{_child},", _status))
 
     def repr_flat(self, is_change_view: bool = False, /) -> tuple[int, str]:
         if not is_change_view:
@@ -357,20 +366,21 @@ class DictBasicWrapper(BasicWrapper):
         length = 0
         for i, item in enumerate(self.__obj.items()):
             k, v = item
-            _status = "d" if v.is_deleted() else ""
+            _status = v.get_status()
+            _r = v.replaced_value().repr_flat(True) if _status == "r" else ""
             _key = f"{k!r}: "
             _lenflat, _flat = v.repr_flat(is_change_view)
             if maxi <= 1:
-                lines.append(colorful_console(f"{_key}{_flat}", _status))
+                lines.append(colorful_console(f"{_key}{_flat}", _status, _r))
                 length += len(_key) + _lenflat
             elif i == 0:
-                lines.append(colorful_console(f"{_key}{_flat},", _status))
+                lines.append(colorful_console(f"{_key}{_flat},", _status, _r))
                 length += len(_key) + _lenflat + 1
             elif i < maxi - 1:
-                lines.append(colorful_console(f" {_key}{_flat},", _status))
+                lines.append(colorful_console(f" {_key}{_flat},", _status, _r))
                 length += len(_key) + _lenflat + 2
             else:
-                lines.append(colorful_console(f" {_key}{_flat}", _status))
+                lines.append(colorful_console(f" {_key}{_flat}", _status, _r))
                 length += len(_key) + _lenflat + 1
         string = "{" + "".join(lines) + "}"
         return length, string
@@ -482,25 +492,34 @@ class ListBasicWrapper(BasicWrapper):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
-            _status = ""
-            if is_change_view:
-                if x.is_deleted():
-                    _status = "d"
-                elif x.is_added():
-                    _status = "a"
-            elif x.is_deleted():
-                continue
-            _head = lines[-1] if lines else ""
-            _lenflat, _flat = x.repr_flat(is_change_view)
-            if lines and (len(_head) + _lenflat + 2 <= max_line_width):
-                lines[-1] += colorful_console(f" {_flat},", _status)
-            elif len(seps) + _lenflat < max_line_width:
-                lines.append(colorful_console(f"{seps}{_flat},", _status))
-            else:
-                _child = x.repr(level + 1, is_change_view)
-                lines.append(colorful_console(f"{seps}{_child},", _status))
+            self.__repr_line(x, is_change_view, seps, max_line_width, level, lines)
         string = "[\n" + "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
+
+    def __repr_line(
+        self,
+        x: BasicWrapper,
+        is_change_view: bool,
+        seps: str,
+        max_line_width: int,
+        level: int,
+        lines: list[str],
+    ) -> None:
+        if is_change_view:
+            _status = x.get_status()
+        else:
+            if x.is_deleted():
+                return
+            _status = ""
+        _head = lines[-1] if lines else ""
+        _lenflat, _flat = x.repr_flat(is_change_view)
+        if lines and (len(_head) + _lenflat + 2 <= max_line_width):
+            lines[-1] += colorful_console(f" {_flat},", _status)
+        elif len(seps) + _lenflat < max_line_width:
+            lines.append(colorful_console(f"{seps}{_flat},", _status))
+        else:
+            _child = x.repr(level + 1, is_change_view)
+            lines.append(colorful_console(f"{seps}{_child},", _status))
 
     def repr_flat(self, is_change_view: bool = False, /) -> tuple[int, str]:
         if not is_change_view:
@@ -510,19 +529,20 @@ class ListBasicWrapper(BasicWrapper):
         maxi = len(self.__obj)
         length = 0
         for i, x in enumerate(self.__obj):
-            _status = "d" if x.is_deleted() else ""
+            _status = x.get_status()
+            _r = x.replaced_value().repr_flat(True) if _status == "r" else ""
             _lenflat, _flat = x.repr_flat(is_change_view)
             if maxi <= 1:
-                lines.append(colorful_console(_flat, _status))
+                lines.append(colorful_console(_flat, _status, _r))
                 length += _lenflat
             elif i == 0:
-                lines.append(colorful_console(f"{_flat},", _status))
+                lines.append(colorful_console(f"{_flat},", _status, _r))
                 length += _lenflat + 1
             elif i < maxi - 1:
-                lines.append(colorful_console(f" {_flat},", _status))
+                lines.append(colorful_console(f" {_flat},", _status, _r))
                 length += _lenflat + 2
             else:
-                lines.append(colorful_console(f" {_flat}", _status))
+                lines.append(colorful_console(f" {_flat}", _status, _r))
                 length += _lenflat + 1
         string = "[" + "".join(lines) + "]"
         return length, string
@@ -596,8 +616,8 @@ class ChangeView:
     def __repr__(self) -> str:
         return self.repr_str
 
-    def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
-        return {"text/html": self.htmlmaker.make()}
+    # def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
+    #     return {"text/html": self.htmlmaker.make()}
 
     def __str__(self) -> str:
         return self.repr_str
@@ -616,13 +636,15 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
             raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
 
-def colorful_console(string: str, status: "WrapperStatus"):
+def colorful_console(string: str, status: "WrapperStatus", replaced: str = ""):
     """Make string colorful in console."""
     match status:
         case "":
             return string
-        case "a" | "r":
+        case "a":
             return f"\033[48;5;028m{string}\033[0m"
+        case "r":
+            return f"\033[48;5;088m{replaced}\033[0m\033[48;5;028m{string}\033[0m"
         case "d":
             return f"\033[48;5;088m{string}\033[0m"
         case _:
