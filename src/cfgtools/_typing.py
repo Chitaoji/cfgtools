@@ -26,3 +26,4 @@ ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
 ]
 ColorScheme = Literal["dark", "modern", "high-intensty"]
+WrapperStatus = Literal["", "a", "d", "r"]

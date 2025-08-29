@@ -8,14 +8,14 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, Iterator, Literal, Self
+from typing import TYPE_CHECKING, Iterable, Iterator, Self
 
 from htmlmaster import HTMLTreeMaker
 
 from .css import TREE_CSS_STYLE
 
 if TYPE_CHECKING:
-    from ._typing import BasicObj, ColorScheme, DataObj, UnwrappedDataObj
+    from ._typing import BasicObj, ColorScheme, DataObj, UnwrappedDataObj, WrapperStatus
     from .iowrapper import ConfigIOWrapper
 
 
@@ -78,7 +78,7 @@ class BasicWrapper:
         return cls.constructor.__new__(new_class)
 
     def __init__(self, data: "DataObj") -> None:
-        self.__status: Literal["", "d", "a", "r"] = ""
+        self.__status: "WrapperStatus" = ""
         self.__replaced_value = None
         if isinstance(data, self.__class__):
             return
@@ -555,6 +555,17 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
             return ["#505050", "#701414", "#147014"]
         case _:
             raise ValueError(f"invalid color scheme: {color_scheme!r}")
+
+
+def colorful_in_console(string: str, status: "WrapperStatus"):
+    """Make string colorful in console."""
+    match status:
+        case "a" | "r":
+            return f"\033[48;5;028m{string}\033[0m"
+        case "d":
+            return f"\033[48;5;088m{string}\033[0m"
+        case _:
+            return string
 
 
 def _sep(level: int) -> str:
