@@ -367,20 +367,30 @@ class DictBasicWrapper(BasicWrapper):
         for i, item in enumerate(self.__obj.items()):
             k, v = item
             _status = v.get_status()
-            _r = v.replaced_value().repr_flat(True) if _status == "r" else ""
+            _r = v.replaced_value().repr_flat(True)[1] if _status == "r" else ""
             _key = f"{k!r}: "
             _lenflat, _flat = v.repr_flat(is_change_view)
+            if _status == "r":
+                _lenflat += len(_key) + len(_r) + 2
             if maxi <= 1:
-                lines.append(colorful_console(f"{_key}{_flat}", _status, _r))
+                lines.append(
+                    colorful_console(f"{_key}{_flat}", _status, f"{_key}{_r}, ")
+                )
                 length += len(_key) + _lenflat
             elif i == 0:
-                lines.append(colorful_console(f"{_key}{_flat},", _status, _r))
+                lines.append(
+                    colorful_console(f"{_key}{_flat},", _status, f"{_key}{_r}, ")
+                )
                 length += len(_key) + _lenflat + 1
             elif i < maxi - 1:
-                lines.append(colorful_console(f" {_key}{_flat},", _status, _r))
+                lines.append(
+                    colorful_console(f" {_key}{_flat},", _status, f" {_key}{_r},")
+                )
                 length += len(_key) + _lenflat + 2
             else:
-                lines.append(colorful_console(f" {_key}{_flat}", _status, _r))
+                lines.append(
+                    colorful_console(f" {_key}{_flat}", _status, f" {_key}{_r},")
+                )
                 length += len(_key) + _lenflat + 1
         string = "{" + "".join(lines) + "}"
         return length, string
@@ -465,10 +475,7 @@ class ListBasicWrapper(BasicWrapper):
     def __setitem__(self, key: int, value: "DataObj", /) -> None:
         if not isinstance(value, self.constructor):
             value = self.constructor(value)
-        if key in self.__obj:
-            value.mark_as_replaced(self.__obj[key])
-        else:
-            value.mark_as_added()
+        value.mark_as_replaced(self.__obj[key])
         self.__obj[key] = value
 
     def __delitem__(self, key: int, /) -> None:
@@ -530,19 +537,21 @@ class ListBasicWrapper(BasicWrapper):
         length = 0
         for i, x in enumerate(self.__obj):
             _status = x.get_status()
-            _r = x.replaced_value().repr_flat(True) if _status == "r" else ""
+            _r = x.replaced_value().repr_flat(True)[1] if _status == "r" else ""
             _lenflat, _flat = x.repr_flat(is_change_view)
+            if _status == "r":
+                _lenflat += len(_r) + 2
             if maxi <= 1:
-                lines.append(colorful_console(_flat, _status, _r))
+                lines.append(colorful_console(_flat, _status, f"{_r}, "))
                 length += _lenflat
             elif i == 0:
-                lines.append(colorful_console(f"{_flat},", _status, _r))
+                lines.append(colorful_console(f"{_flat},", _status, f"{_r}, "))
                 length += _lenflat + 1
             elif i < maxi - 1:
-                lines.append(colorful_console(f" {_flat},", _status, _r))
+                lines.append(colorful_console(f" {_flat},", _status, f" {_r},"))
                 length += _lenflat + 2
             else:
-                lines.append(colorful_console(f" {_flat}", _status, _r))
+                lines.append(colorful_console(f" {_flat}", _status, f" {_r},"))
                 length += _lenflat + 1
         string = "[" + "".join(lines) + "]"
         return length, string
