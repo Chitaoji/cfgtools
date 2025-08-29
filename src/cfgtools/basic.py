@@ -346,6 +346,17 @@ class DictBasicWrapper(BasicWrapper):
             if v.is_deleted():
                 return
             _status = ""
+        if _status == "r":
+            self.__repr_line(
+                k,
+                v.replaced_value(),
+                is_change_view,
+                seps,
+                max_line_width,
+                level,
+                lines,
+            )
+            _status = "a"
         _head = lines[-1] if lines else ""
         _key = f"{k!r}: "
         _lenflat, _flat = v.repr_flat(is_change_view)
@@ -518,6 +529,11 @@ class ListBasicWrapper(BasicWrapper):
             if x.is_deleted():
                 return
             _status = ""
+        if _status == "r":
+            self.__repr_line(
+                x.replaced_value(), is_change_view, seps, max_line_width, level, lines
+            )
+            _status = "a"
         _head = lines[-1] if lines else ""
         _lenflat, _flat = x.repr_flat(is_change_view)
         if lines and (len(_head) + _lenflat + 2 <= max_line_width):
