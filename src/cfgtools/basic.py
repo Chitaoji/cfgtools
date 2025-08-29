@@ -203,23 +203,23 @@ class BasicWrapper:
         """Get the module variable `MAX_LINE_WIDTH`."""
         return getattr(sys.modules[__name__.rpartition(".")[0]], "MAX_LINE_WIDTH")
 
-    def mark_as_original(self) -> None:
-        """Mark self as original."""
+    def recover(self) -> None:
+        """Recover the original data."""
         self.__status = ""
 
     def mark_as_deleted(self) -> None:
         """Mark self as deleted."""
-        self.mark_as_original()
+        self.recover()
         self.__status = "d"
 
     def mark_as_added(self) -> None:
         """Mark self as added."""
-        self.mark_as_original()
+        self.recover()
         self.__status = "a"
 
     def mark_as_replaced(self, value: "BasicWrapper", /) -> None:
         """Mark self as replaced."""
-        self.mark_as_original()
+        self.recover()
         if r := value.replaced_value():
             self.__replaced_value = r
         else:
@@ -456,20 +456,17 @@ class DictBasicWrapper(BasicWrapper):
         maker.add("}", "t")
         return maker
 
-    def mark_as_deleted(self) -> None:
-        super().mark_as_deleted()
-        for v in self.values():
-            v.mark_as_original()
-
-    def mark_as_added(self) -> None:
-        super().mark_as_added()
-        for v in self.values():
-            v.mark_as_original()
-
-    def mark_as_original(self) -> None:
-        super().mark_as_original()
-        for v in self.values():
-            v.mark_as_original()
+    def recover(self) -> None:
+        super().recover()
+        for k, v in self.__obj.items():
+            match v.get_status():
+                case "a":
+                    del self.__obj[k]
+                case "r":
+                    self.__obj[k] = v.replaced_value()
+                    self.__obj[k].recover()
+                case _:
+                    v.recover()
 
     def has_flag(self, flag: Flag, /) -> bool:
         return any(k == flag or v.has_flag(flag) for k, v in self.items())
@@ -644,20 +641,17 @@ class ListBasicWrapper(BasicWrapper):
         maker.add("]", "t")
         return maker
 
-    def mark_as_deleted(self) -> None:
-        super().mark_as_deleted()
-        for x in self:
-            x.mark_as_original()
-
-    def mark_as_added(self) -> None:
-        super().mark_as_added()
-        for x in self:
-            x.mark_as_original()
-
-    def mark_as_original(self) -> None:
-        super().mark_as_original()
-        for x in self:
-            x.mark_as_original()
+    def recover(self) -> None:
+        super().recover()
+        for i, x in enumerate(self.__obj):
+            match x.get_status():
+                case "a":
+                    del self.__obj[i]
+                case "r":
+                    self.__obj[i] = x.replaced_value()
+                    self.__obj[i].recover()
+                case _:
+                    x.recover()
 
     def has_flag(self, flag: Flag, /) -> bool:
         return any(x.has_flag() for x in self)
