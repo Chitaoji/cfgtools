@@ -120,17 +120,13 @@ class BasicWrapper:
 
     def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
         """Represent self."""
-        _ = level
-        string = repr(self.__obj)
-        if is_change_view:
-            match self.__status:
-                case "a" | "r":
-                    return f"\033[48;5;028m{string}\033[0m"
-                case "d":
-                    return f"\033[48;5;088m{string}\033[0m"
-                case _:
-                    return string
-        return string
+        _ = level, is_change_view
+        return repr(self.__obj)
+
+    def repr_flat(self, is_change_view: bool = False, /) -> tuple[int, str]:
+        """Represent self in one line."""
+        _, string = is_change_view, repr(self.__obj)
+        return len(string), string
 
     def view_change(self, color_scheme: "ColorScheme" = "dark") -> "ChangeView":
         """View the change of self since initialized."""
@@ -317,32 +313,59 @@ class DictBasicWrapper(BasicWrapper):
 
     def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
         if level == 0:
-            if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+            lenflat, flat = self.repr_flat(is_change_view)
+            if lenflat <= self.get_max_line_width():
                 return flat
         seps = _sep(level + 1)
-        string = "{\n"
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
             if v.is_deleted():
-                continue
+                if is_change_view:
+                    _status = "d"
+                else:
+                    continue
+            else:
+                _status = ""
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
-            _flat = repr(v.unwrap())
-            if lines and (len(_head) + len(_key) + len(_flat) + 2 <= max_line_width):
-                lines[-1] += " " + _key + _flat + ","
-            elif len(seps) + len(_key) + len(_flat) < max_line_width:
-                lines.append(seps + _key + _flat + ",")
+            _lenflat, _flat = v.repr_flat(is_change_view)
+            if lines and (len(_head) + len(_key) + _lenflat + 2 <= max_line_width):
+                lines[-1] += colorful_console(f" {_key}{_flat},", _status)
+            elif len(seps) + len(_key) + _lenflat < max_line_width:
+                lines.append(colorful_console(f"{seps}{_key}{_flat},", _status))
             else:
-                _child = v.repr(level + 1)
-                if lines and (
-                    len(_head) + len(_key) + len(_child) + 2 <= max_line_width
-                ):
-                    lines[-1] += " " + _key + _child + ","
-                else:
-                    lines.append(seps + _key + _child + ",")
-        string += "\n".join(lines) + f"\n{_sep(level)}" "}"
+                _child = v.repr(level + 1, is_change_view)
+                lines.append(colorful_console(f"{seps}{_key}{_child},", _status))
+        string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}" "}"
         return string
+
+    def repr_flat(self, is_change_view: bool = False, /) -> tuple[int, str]:
+        if not is_change_view:
+            string = repr(self.unwrap())
+            return len(string), string
+        lines: list[str] = []
+        maxi = len(self.__obj)
+        length = 0
+        for i, item in enumerate(self.__obj.items()):
+            k, v = item
+            _status = "d" if v.is_deleted() else ""
+            _key = f"{k!r}: "
+            _lenflat, _flat = v.repr_flat(is_change_view)
+            if maxi <= 1:
+                lines.append(colorful_console(f"{_key}{_flat}", _status))
+                length += len(_key) + _lenflat
+            elif i == 0:
+                lines.append(colorful_console(f"{_key}{_flat},", _status))
+                length += len(_key) + _lenflat + 1
+            elif i < maxi - 1:
+                lines.append(colorful_console(f" {_key}{_flat},", _status))
+                length += len(_key) + _lenflat + 2
+            else:
+                lines.append(colorful_console(f" {_key}{_flat}", _status))
+                length += len(_key) + _lenflat + 1
+        string = "{" + "".join(lines) + "}"
+        return length, string
 
     def keys(self) -> Iterable["BasicObj"]:
         return self.unwrap_top_level().keys()
@@ -444,29 +467,56 @@ class ListBasicWrapper(BasicWrapper):
 
     def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
         if level == 0:
-            if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+            lenflat, flat = self.repr_flat(is_change_view)
+            if lenflat <= self.get_max_line_width():
                 return flat
         seps = _sep(level + 1)
-        string = "[\n"
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
             if x.is_deleted():
-                continue
-            _head = lines[-1] if lines else ""
-            _flat = repr(x.unwrap())
-            if lines and (len(_head) + len(_flat) + 2 <= max_line_width):
-                lines[-1] += " " + _flat + ","
-            elif len(_head) + len(_flat) < max_line_width:
-                lines.append(seps + _flat + ",")
-            else:
-                _child = x.repr(level + 1)
-                if lines and (len(_head) + len(_child) + 2 <= max_line_width):
-                    lines[-1] += " " + _child + ","
+                if is_change_view:
+                    _status = "d"
                 else:
-                    lines.append(seps + _child + ",")
-        string += "\n".join(lines) + f"\n{_sep(level)}" + "]"
+                    continue
+            else:
+                _status = ""
+            _head = lines[-1] if lines else ""
+            _lenflat, _flat = x.repr_flat(is_change_view)
+            if lines and (len(_head) + _lenflat + 2 <= max_line_width):
+                lines[-1] += colorful_console(f" {_flat},", _status)
+            elif len(seps) + _lenflat < max_line_width:
+                lines.append(colorful_console(f"{seps}{_flat},", _status))
+            else:
+                _child = x.repr(level + 1, is_change_view)
+                lines.append(colorful_console(f"{seps}{_child},", _status))
+        string = "[\n" + "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
+
+    def repr_flat(self, is_change_view: bool = False, /) -> tuple[int, str]:
+        if not is_change_view:
+            string = repr(self.unwrap())
+            return len(string), string
+        lines: list[str] = []
+        maxi = len(self.__obj)
+        length = 0
+        for i, x in enumerate(self.__obj):
+            _status = "d" if x.is_deleted() else ""
+            _lenflat, _flat = x.repr_flat(is_change_view)
+            if maxi <= 1:
+                lines.append(colorful_console(_flat, _status))
+                length += _lenflat
+            elif i == 0:
+                lines.append(colorful_console(f"{_flat},", _status))
+                length += _lenflat + 1
+            elif i < maxi - 1:
+                lines.append(colorful_console(f" {_flat},", _status))
+                length += _lenflat + 2
+            else:
+                lines.append(colorful_console(f" {_flat}", _status))
+                length += _lenflat + 1
+        string = "[" + "".join(lines) + "]"
+        return length, string
 
     def append(self, obj: "DataObj", /) -> None:
         if not isinstance(obj, self.constructor):
@@ -557,15 +607,17 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
             raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
 
-def colorful_in_console(string: str, status: "WrapperStatus"):
+def colorful_console(string: str, status: "WrapperStatus"):
     """Make string colorful in console."""
     match status:
+        case "":
+            return string
         case "a" | "r":
             return f"\033[48;5;028m{string}\033[0m"
         case "d":
             return f"\033[48;5;088m{string}\033[0m"
         case _:
-            return string
+            raise ValueError(f"invalid status: {status!r}")
 
 
 def _sep(level: int) -> str:
