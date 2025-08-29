@@ -214,9 +214,12 @@ class BasicWrapper:
 
     def mark_as_replaced(self, value: "BasicWrapper", /) -> None:
         """Mark self as replaced."""
+        if v := value.replaced_value():
+            self.__replaced_value = v
+        else:
+            value.mark_as_deleted()
+            self.__replaced_value = value
         self.__status = "r"
-        value.mark_as_deleted()
-        self.__replaced_value = value
 
     def is_deleted(self) -> bool:
         """If self is marked as deleted."""
@@ -225,6 +228,10 @@ class BasicWrapper:
     def is_present(self) -> bool:
         """If self is marked as deleted."""
         return self.__status != "d"
+
+    def is_added(self) -> bool:
+        """If self is marked as added."""
+        return self.__status == "a"
 
     def replaced_value(self) -> "BasicWrapper | None":
         """Return the replaced value if exists."""
@@ -320,13 +327,14 @@ class DictBasicWrapper(BasicWrapper):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
-            if v.is_deleted():
-                if is_change_view:
+            _status = ""
+            if is_change_view:
+                if v.is_deleted():
                     _status = "d"
-                else:
-                    continue
-            else:
-                _status = ""
+                elif v.is_added():
+                    _status = "a"
+            elif v.is_deleted():
+                continue
             _head = lines[-1] if lines else ""
             _key = f"{k!r}: "
             _lenflat, _flat = v.repr_flat(is_change_view)
@@ -474,13 +482,14 @@ class ListBasicWrapper(BasicWrapper):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
-            if x.is_deleted():
-                if is_change_view:
+            _status = ""
+            if is_change_view:
+                if x.is_deleted():
                     _status = "d"
-                else:
-                    continue
-            else:
-                _status = ""
+                elif x.is_added():
+                    _status = "a"
+            elif x.is_deleted():
+                continue
             _head = lines[-1] if lines else ""
             _lenflat, _flat = x.repr_flat(is_change_view)
             if lines and (len(_head) + _lenflat + 2 <= max_line_width):
