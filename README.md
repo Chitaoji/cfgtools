@@ -21,7 +21,7 @@ toml
 ```py
 >>> import cfgtools as cfg
 >>> f = cfg.config({"foo": "bar", "this": ["is", "an", "example"]})
->>> f.save("test.cfg", "yaml") # or: cfg.to_yaml("test.cfg")
+>>> f.save("test.cfg", "yaml") # or: f.to_yaml("test.cfg")
 ```
 If not specifeid, the format of the file will be automatically detected according to the file suffix. Valid formats include `ini`, `json`, `yaml`, `pickle`, `toml`, etc. For example:
 ```py
