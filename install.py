@@ -15,22 +15,23 @@ import re
 from pathlib import Path
 from typing import Any, Final
 
-import cfgtools
+import cfgtools as cfg
 from re_extensions import rsplit, word_wrap
 
 here = Path(__file__).parent
 
 # Load the package's meta-data from pyproject.toml.
-cfg: dict[str, Any] = cfgtools.read_toml(here / "pyproject.toml")
-NAME: Final[str] = cfg["project"]["name"]
-SUMMARY: Final[str] = cfg["SUMMARY"]
-HOMEPAGE: Final[str] = cfg["HOMEPAGE"]
-REQUIRES: Final[list[str]] = cfg["REQUIRES"]
-SOURCE: str = cfg["SOURCE"]
-LICENSE = (here / "LICENSE").read_text().partition("\n")[0]
+f = cfg.read_toml(here / "pyproject.toml")
+project: dict[str, str | list[Any]] = f["project"].to_dict()
+NAME: Final[str] = project["name"]
+SUMMARY: Final[str] = project["description"]
+HOMEPAGE: Final[str] = project["urls"]["Repository"]
+REQUIRES: Final[list[str]] = project["dependencies"]
+SOURCE = "src"
+LICENSE = (here / project["license-files"][0]).read_text().partition("\n")[0]
 
 # Import the README and use it as the long-description.
-readme_path = here / "README.md"
+readme_path = here / project["readme"].asstr()
 if readme_path.exists():
     long_description = "\n" + readme_path.read_text()
 else:

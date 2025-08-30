@@ -173,11 +173,11 @@ class BasicWrapper:
         """Config type."""
         return self.__obj.__class__
 
-    def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
+    def asdict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a mapping."""
         raise TypeError(f"{self.__desc()} can't be converted into a dict")
 
-    def to_list(self) -> list["UnwrappedDataObj"]:
+    def aslist(self) -> list["UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a list."""
         raise TypeError(f"{self.__desc()} can't be converted into a list")
 
@@ -437,7 +437,7 @@ class DictBasicWrapper(BasicWrapper):
     def get_type(self) -> type:
         return self.__obj.__class__
 
-    def to_dict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
+    def asdict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.unwrap()
 
     def get_html_node(self) -> HTMLTreeMaker:
@@ -622,7 +622,7 @@ class ListBasicWrapper(BasicWrapper):
     def get_type(self) -> type:
         return self.__obj.__class__
 
-    def to_list(self) -> list["UnwrappedDataObj"]:
+    def aslist(self) -> list["UnwrappedDataObj"]:
         return self.unwrap()
 
     def get_html_node(self) -> HTMLTreeMaker:

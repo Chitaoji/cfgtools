@@ -60,7 +60,7 @@ This project falls under the BSD 3-Clause License.
 ## History
 ### v0.0.5
 * Added support for .toml files.
-* New method `ConfigIOWrapper.view_change()`.
+* New method for `ConfigIOWrapper`: `*.view_change()`, `*.asdict()`, `*.aslist()`.
 
 ### v0.0.4
 * Fixed a bug in path resolution.

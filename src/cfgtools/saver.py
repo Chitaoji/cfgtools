@@ -30,11 +30,11 @@ class ConfigSaver:
         """Returns the unwrapped config data."""
         raise NotImplementedError()
 
-    def to_ini_dict(self) -> dict:
+    def as_ini_dict(self) -> dict:
         """Reformat the config object with `.ini` format, and returns a dict."""
         raise NotImplementedError()
 
-    def to_toml_dict(self) -> dict:
+    def as_toml_dict(self) -> dict:
         """Reformat the config object with `.toml` format, and returns a dict."""
         raise NotImplementedError()
 
@@ -66,7 +66,7 @@ class ConfigSaver:
 
         """
         parser = ConfigParser()
-        parser.read_dict(self.to_ini_dict())
+        parser.read_dict(self.as_ini_dict())
         with open(path, "w", encoding=encoding) as f:
             parser.write(f)
 
@@ -79,7 +79,7 @@ class ConfigSaver:
 
         """
         with open(path, "w", encoding=encoding) as f:
-            toml.dump(self.to_toml_dict(), f)
+            toml.dump(self.as_toml_dict(), f)
 
     def to_text(
         self, path: str | Path | None = None, /, encoding: str | None = None
