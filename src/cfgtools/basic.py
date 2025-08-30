@@ -207,8 +207,8 @@ class BasicWrapper:
         """Recover the original data."""
         self.__status = ""
 
-    def mark_as_deleted(self) -> None:
-        """Mark self as deleted."""
+    def delete(self) -> None:
+        """Delete self."""
         self.recover()
         self.__status = "d"
 
@@ -223,7 +223,7 @@ class BasicWrapper:
         if r := value.replaced_value():
             self.__replaced_value = r
         else:
-            value.mark_as_deleted()
+            value.delete()
             self.__replaced_value = value
         self.__status = "r"
 
@@ -314,7 +314,7 @@ class DictBasicWrapper(BasicWrapper):
         self.__obj[key] = value
 
     def __delitem__(self, key: "BasicObj", /) -> None:
-        self.__obj[key].mark_as_deleted()
+        self.__obj[key].delete()
 
     def __len__(self) -> int:
         return len(self.unwrap_top_level())
@@ -515,7 +515,7 @@ class ListBasicWrapper(BasicWrapper):
         self.__obj[key] = value
 
     def __delitem__(self, key: int, /) -> None:
-        self.__obj[key].mark_as_deleted()
+        self.__obj[key].delete()
 
     def __len__(self) -> int:
         return len(self.unwrap_top_level())

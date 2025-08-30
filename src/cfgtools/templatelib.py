@@ -70,7 +70,7 @@ class ConfigTemplate(BasicWrapper):
             return constructor(self.__obj)
         return wrapper.copy()
 
-    def mark_as_deleted(self) -> None:
+    def delete(self) -> None:
         raise TypeError("cannot modify a template")
 
     def mark_as_added(self) -> None:
