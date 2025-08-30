@@ -13,7 +13,7 @@ $ pip install re-extensions
 # -*- coding: utf-8 -*-
 import re
 from pathlib import Path
-from typing import Any, Final
+from typing import Final
 
 import cfgtools as cfg
 from re_extensions import rsplit, word_wrap
@@ -22,7 +22,7 @@ here = Path(__file__).parent
 
 # Load the package's meta-data from pyproject.toml.
 f = cfg.read_toml(here / "pyproject.toml")
-project: dict[str, str | list[Any]] = f["project"].to_dict()
+project = f["project"].asdict()
 NAME: Final[str] = project["name"]
 SUMMARY: Final[str] = project["description"]
 HOMEPAGE: Final[str] = project["urls"]["Repository"]
@@ -31,7 +31,7 @@ SOURCE = "src"
 LICENSE = (here / project["license-files"][0]).read_text().partition("\n")[0]
 
 # Import the README and use it as the long-description.
-readme_path = here / project["readme"].asstr()
+readme_path = here / project["readme"]
 if readme_path.exists():
     long_description = "\n" + readme_path.read_text()
 else:
@@ -97,7 +97,7 @@ class ReadmeFormatError(Exception):
 
 if __name__ == "__main__":
     # Import the __init__.py and change the module docstring.
-    init_path = here / SOURCE / "__init__.py"
+    init_path = here / SOURCE / NAME / "__init__.py"
     module_file = init_path.read_text()
     new_doc, long_description = _readme2doc(long_description)
     module_file = re.sub(

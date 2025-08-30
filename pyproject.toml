@@ -22,7 +22,7 @@ maintainers = [
 description = "Provides tools for managing config files."
 readme = "README.md"
 license = "BSD-3-Clause"
-license-files = ["LICENCSE"]
+license-files = ["LICENSE"]
 keywords = ["config"]
 classifiers = [
   "Programming Language :: Python :: 3",

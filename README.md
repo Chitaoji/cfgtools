@@ -12,6 +12,7 @@ pyyaml
 lazyr
 Faker
 htmlmaster
+toml
 ```
 
 ## Usage
