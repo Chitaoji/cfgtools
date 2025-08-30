@@ -11,6 +11,7 @@ $ pip install re-extensions
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 import re
 from pathlib import Path
 from typing import Final
@@ -105,3 +106,4 @@ if __name__ == "__main__":
     )
     init_path.write_text(module_file)
     readme_path.write_text(long_description.strip())
+    os.system(f"cd {here} && python -m build")
