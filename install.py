@@ -15,18 +15,18 @@ import re
 from pathlib import Path
 from typing import Any, Final
 
-import yaml
+import cfgtools
 from re_extensions import rsplit, word_wrap
 
 here = Path(__file__).parent
 
-# Load the package's meta-data from metadata.yml.
-yml: dict[str, Any] = yaml.safe_load((here / "metadata.yml").read_text())
-NAME: Final[str] = yml["NAME"]
-SUMMARY: Final[str] = yml["SUMMARY"]
-HOMEPAGE: Final[str] = yml["HOMEPAGE"]
-REQUIRES: Final[list[str]] = yml["REQUIRES"]
-SOURCE: str = yml["SOURCE"]
+# Load the package's meta-data from pyproject.toml.
+cfg: dict[str, Any] = cfgtools.read_toml(here / "pyproject.toml")
+NAME: Final[str] = cfg["project"]["name"]
+SUMMARY: Final[str] = cfg["SUMMARY"]
+HOMEPAGE: Final[str] = cfg["HOMEPAGE"]
+REQUIRES: Final[list[str]] = cfg["REQUIRES"]
+SOURCE: str = cfg["SOURCE"]
 LICENSE = (here / "LICENSE").read_text().partition("\n")[0]
 
 # Import the README and use it as the long-description.
