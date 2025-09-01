@@ -14,7 +14,8 @@ TREE_CSS_STYLE = """<style type="text/css">
     position: relative;
     padding-left: 2.5rem;
 }}
-.{0} li.t, li.i {{
+.{0} li.t,
+.{0} li.i {{
     display: block;
     position: relative;
     padding-left: 0;
@@ -27,7 +28,8 @@ TREE_CSS_STYLE = """<style type="text/css">
     padding: .2em .5em;
     position: relative;
 }}
-.{0} li>details>summary>span.open, li>details[open]>summary>span.closed {{
+.{0} li>details>summary>span.open,
+.{0} li>details[open]>summary>span.closed {{
     display: none;
 }}
 .{0} li>details[open]>summary>span.open {{
