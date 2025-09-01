@@ -17,7 +17,7 @@ from .saver import ConfigSaver, FileFormatError
 from .templatelib import ConfigTemplate
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, DataObj, UnwrappedDataObj
+    from ._typing import ColorScheme, ConfigFileFormat, DataObj, UnwrappedDataObj
 
 NoneType = type(None)
 
@@ -122,8 +122,10 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
             s = self.repr()
         return f"cfgtools.config({s})"
 
-    def to_html(self) -> HTMLTreeMaker:
-        main_maker = super().to_html()
+    def to_html(
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+    ) -> HTMLTreeMaker:
+        main_maker = super().to_html(is_change_view, color_scheme)
         main_maker.add(
             (
                 f"format: {self.fileformat!r} | path: {self.path!r} "

@@ -130,7 +130,7 @@ class BasicWrapper:
     def view_change(self, color_scheme: "ColorScheme" = "dark") -> "ChangeView":
         """View the change of self since initialized."""
         _ = color_scheme
-        return ChangeView(self.repr(0, True), self.to_html())
+        return ChangeView(self.repr(0, True), self.to_html(True, color_scheme))
 
     def keys(self) -> "Iterable[BasicObj]":
         """If the data is a mapping, provide a view of its wrapped keys."""
@@ -181,9 +181,11 @@ class BasicWrapper:
         """Returns the unwrapped data if it's a list."""
         raise TypeError(f"{self.__desc()} can't be converted into a list")
 
-    def to_html(self) -> HTMLTreeMaker:
+    def to_html(
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+    ) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
-        maker = self.get_html_node()
+        maker = self.get_html_node(is_change_view, color_scheme)
         maker.setcls("t")
         main_maker = HTMLTreeMaker()
         main_maker.add(maker)
@@ -191,13 +193,18 @@ class BasicWrapper:
         main_maker.setrootcls("cfgtools-tree")
         return main_maker
 
-    def get_html_node(self) -> HTMLTreeMaker:
+    def get_html_node(
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+    ) -> HTMLTreeMaker:
         """
         Return a plain HTMLTreeMaker object for representing the current
         node.
 
         """
-        return HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
+        node = HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
+        if is_change_view:
+            node.setstyle(colorful_style(color_scheme, self.get_status()))
+        return node
 
     def get_max_line_width(self) -> int:
         """Get the module variable `MAX_LINE_WIDTH`."""
@@ -440,12 +447,16 @@ class DictBasicWrapper(BasicWrapper):
     def asdict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         return self.unwrap()
 
-    def get_html_node(self) -> HTMLTreeMaker:
+    def get_html_node(
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+    ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
-        for k, v in self.items():
-            node = v.get_html_node()
+        for k, v in self.__obj.items():
+            if not is_change_view and v.get_status() == "d":
+                continue
+            node = v.get_html_node(is_change_view, color_scheme)
             if node.has_child():
                 node.setval(f"{k!r}: {node.getval()}")
                 tail = node.get(-1)
@@ -625,12 +636,14 @@ class ListBasicWrapper(BasicWrapper):
     def aslist(self) -> list["UnwrappedDataObj"]:
         return self.unwrap()
 
-    def get_html_node(self) -> HTMLTreeMaker:
+    def get_html_node(
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+    ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
         for x in self:
-            node = x.get_html_node()
+            node = x.get_html_node(is_change_view, color_scheme)
             if node.has_child():
                 node.setval(f"{node.getval()}")
                 tail = node.get(-1)
@@ -678,8 +691,8 @@ class ChangeView:
     def __repr__(self) -> str:
         return self.repr_str
 
-    # def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
-    #     return {"text/html": self.htmlmaker.make()}
+    def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
+        return {"text/html": self.htmlmaker.make()}
 
     def __str__(self) -> str:
         return self.repr_str
@@ -698,7 +711,7 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
             raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
 
-def colorful_console(string: str, status: "WrapperStatus", replaced: str = ""):
+def colorful_console(string: str, status: "WrapperStatus", replaced: str = "") -> str:
     """Make string colorful in console."""
     match status:
         case "":
@@ -717,10 +730,12 @@ def colorful_style(color_scheme: "ColorScheme", status: "WrapperStatus") -> str:
     """Return coloful css style."""
     _, r, g = get_bg_colors(color_scheme)
     match status:
+        case "":
+            return ""
         case "a" | "r":
-            return f' style="text-decoration:none;color:#cccccc;background-color:{g}"'
+            return f"text-decoration:none;color:#cccccc;background-color:{g}"
         case "d":
-            return f' style="text-decoration:none;color:#cccccc;background-color:{r}"'
+            return f"text-decoration:none;color:#cccccc;background-color:{r}"
         case _:
             raise ValueError(f"invalid status: {status!r}")
 
