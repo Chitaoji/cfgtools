@@ -4,6 +4,7 @@ Setup the package.
 To use the full functionality of this file, you must:
 
 ```sh
+$ pip install build
 $ pip install pyyaml
 $ pip install re-extensions
 ```
@@ -94,7 +95,7 @@ def _quote(readme: str) -> str:
 
 
 def _version(version: str = VERSION) -> str:
-    return f'"""Version file."""\n\nVERSION = "{version}"'
+    return f'"""Version file."""\n\n__version__ = "{version}"'
 
 
 class ReadmeFormatError(Exception):
