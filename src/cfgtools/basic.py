@@ -713,5 +713,17 @@ def colorful_console(string: str, status: "WrapperStatus", replaced: str = ""):
             raise ValueError(f"invalid status: {status!r}")
 
 
+def colorful_style(color_scheme: "ColorScheme", status: "WrapperStatus") -> str:
+    """Return coloful css style."""
+    _, r, g = get_bg_colors(color_scheme)
+    match status:
+        case "a" | "r":
+            return f' style="text-decoration:none;color:#cccccc;background-color:{g}"'
+        case "d":
+            return f' style="text-decoration:none;color:#cccccc;background-color:{r}"'
+        case _:
+            raise ValueError(f"invalid status: {status!r}")
+
+
 def _sep(level: int) -> str:
     return "    " * level
