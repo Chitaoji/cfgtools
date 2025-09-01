@@ -187,8 +187,8 @@ class BasicWrapper:
         maker.setcls("t")
         main_maker = HTMLTreeMaker()
         main_maker.add(maker)
-        main_maker.setstyle(TREE_CSS_STYLE)
-        main_maker.set_maincls("cfgtools-tree")
+        main_maker.setrootstyle(TREE_CSS_STYLE)
+        main_maker.setrootcls("cfgtools-tree")
         return main_maker
 
     def get_html_node(self) -> HTMLTreeMaker:
