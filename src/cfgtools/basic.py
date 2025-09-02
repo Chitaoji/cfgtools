@@ -456,18 +456,17 @@ class DictBasicWrapper(BasicWrapper):
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         lenflat, flat = self.repr_flat(is_change_view)
-        if lenflat <= self.get_max_line_width():
+        if lenflat <= 0:  # self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("{")
         maker.addspan(" ... },", spancls="closed")
         for k, v in self.__obj.items():
             if not is_change_view and v.get_status() == "d":
                 continue
-            node = v.get_html_node(is_change_view, color_scheme)
+            _status = status if status else v.get_status()
+            node = v.get_html_node(is_change_view, color_scheme, _status)
             if is_change_view:
-                color = colorful_style(
-                    color_scheme, status if status else v.get_status()
-                )
+                color = colorful_style(color_scheme, _status)
                 node_value = f"{k!r}: {node.getval()}"
                 if node.has_child():
                     node_value = f'<span style="{color}">' + node_value.replace(
@@ -475,7 +474,9 @@ class DictBasicWrapper(BasicWrapper):
                     )
                     node.setval(node_value)
                     tail = node.get(-1)
-                    tail.addspan(",", style=color)
+                    tail_value = tail.getval()
+                    tail.setval("")
+                    tail.addspan(f"{tail_value},", style=color)
                 else:
                     node.setval("")
                     node.addspan(node_value + ",", style=color)
@@ -665,17 +666,37 @@ class ListBasicWrapper(BasicWrapper):
         color_scheme: "ColorScheme" = "dark",
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+        lenflat, flat = self.repr_flat(is_change_view)
+        if lenflat <= 0:  # self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("[")
         maker.addspan(" ... ],", spancls="closed")
-        for x in self:
-            node = x.get_html_node(is_change_view, color_scheme)
-            if node.has_child():
-                tail = node.get(-1)
-                tail.addval(",")
+        for x in self.__obj:
+            if not is_change_view and x.get_status() == "d":
+                continue
+            _status = status if status else x.get_status()
+            node = x.get_html_node(is_change_view, color_scheme, _status)
+            if is_change_view:
+                color = colorful_style(color_scheme, _status)
+                node_value = node.getval()
+                if node.has_child():
+                    node_value = f'<span style="{color}">' + node_value.replace(
+                        "<span", f'</span><span style="{color}"'
+                    )
+                    node.setval(node_value)
+                    tail = node.get(-1)
+                    tail_value = tail.getval()
+                    tail.setval("")
+                    tail.addspan(f"{tail_value},", style=color)
+                else:
+                    node.setval("")
+                    node.addspan(node_value + ",", style=color)
             else:
-                node.addval(",")
+                if node.has_child():
+                    tail = node.get(-1)
+                    tail.addval(",")
+                else:
+                    node.addval(",")
             maker.add(node)
         maker.add("]", "t")
         return maker
