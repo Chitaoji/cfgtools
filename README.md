@@ -46,7 +46,57 @@ cfgtools.config({
     'foo': None, 'this': ['is', 'an', 'example'],
     'that': {'is': ['also', 'an', 'example']},
 })
+>>> f.view_change()
 ```
+<style type="text/css">
+.cfgtools-tree li.m {
+    display: block;
+    position: relative;
+    padding-left: 2.5rem;
+}
+.cfgtools-tree li.t,
+.cfgtools-tree li.i {
+    display: block;
+    position: relative;
+    padding-left: 0;
+}
+.cfgtools-tree li.i>span {
+    border: solid .1em #666;
+    border-radius: .2em;
+    display: inline-block;
+    margin-top: .5em;
+    padding: .2em .5em;
+    position: relative;
+}
+.cfgtools-tree li>details>summary>span.open,
+.cfgtools-tree li>details[open]>summary>span.closed {
+    display: none;
+}
+.cfgtools-tree li>details[open]>summary>span.open {
+    display: inline;
+}
+.cfgtools-tree li>details>summary {
+    display: block;
+    cursor: pointer;
+}
+.cfgtools-tree ul {
+    display: table;
+    padding-left: 0;
+    margin-left: 0;
+}
+</style>
+<ul class="cfgtools-tree">
+<li class="t"><details open><summary>{<span class="closed"> ... },</span></summary>
+<ul class="t">
+<li class="m"><span style="text-decoration:none;color:#cccccc;background-color:#4d2f2f">'foo': 'bar',</span></li>
+<li class="m"><span style="text-decoration:none;color:#cccccc;background-color:#2f4d2f">'foo': None,</span></li>
+<li class="m"><span>'this': ['is', 'an', 'example'],</span></li>
+<li class="m"><span style="text-decoration:none;color:#cccccc;background-color:#2f4d2f">'that': {'is': ['also', 'an', 'example']},</span></li>
+<li class="t">}</li>
+</ul>
+</details></li>
+<li class="i"><span>format: None | path: None | encoding: None</span></li>
+</ul>
 
 ## See Also
 ### Github repository
@@ -59,6 +109,9 @@ cfgtools.config({
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.6
+* Beautified the output of `ConfigIOWrapper.view_change()` through `_repr_mimebundle_()`.
+
 ### v0.0.5
 * Added support for .toml files.
 * New method for `ConfigIOWrapper`: `*.view_change()`, `*.asdict()`, `*.aslist()`.
