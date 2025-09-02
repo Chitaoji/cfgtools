@@ -48,6 +48,7 @@ cfgtools.config({
 })
 >>> f.view_change()
 ```
+
 <style type="text/css">
 .cfgtools-tree li.m {
     display: block;
