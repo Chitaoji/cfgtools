@@ -126,12 +126,10 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
         self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
     ) -> HTMLTreeMaker:
         main_maker = super().to_html(is_change_view, color_scheme)
-        main_maker.add(
-            (
-                f"format: {self.fileformat!r} | path: {self.path!r} "
-                f"| encoding: {self.encoding!r}"
-            ),
-            "i",
+        main_maker.add("", licls="i")
+        main_maker.get(-1).addspan(
+            f"format: {self.fileformat!r} | path: {self.path!r} "
+            f"| encoding: {self.encoding!r}"
         )
         return main_maker
 

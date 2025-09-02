@@ -201,9 +201,12 @@ class BasicWrapper:
         node.
 
         """
-        node = HTMLTreeMaker(repr(self.__obj).replace(">", "&gt").replace("<", "&lt"))
+        value = repr(self.__obj).replace(">", "&gt").replace("<", "&lt")
         if is_change_view:
-            node.setstyle(colorful_style(color_scheme, self.get_status()))
+            node = HTMLTreeMaker()
+            node.addspan(value, colorful_style(color_scheme, self.get_status()))
+        else:
+            node = HTMLTreeMaker(value)
         return node
 
     def get_max_line_width(self) -> int:
@@ -452,7 +455,7 @@ class DictBasicWrapper(BasicWrapper):
     ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
-        maker = HTMLTreeMaker('{<span class="closed"> ... }</span>')
+        maker = HTMLTreeMaker('{<span class="closed"> ... },</span>')
         for k, v in self.__obj.items():
             if not is_change_view and v.get_status() == "d":
                 continue
@@ -460,7 +463,7 @@ class DictBasicWrapper(BasicWrapper):
             if node.has_child():
                 node.setval(f"{k!r}: {node.getval()}")
                 tail = node.get(-1)
-                tail.setval(f"{tail.getval()},")
+                tail.addval(",")
             else:
                 node.setval(f"{k!r}: {node.getval()},")
             maker.add(node)
@@ -641,15 +644,14 @@ class ListBasicWrapper(BasicWrapper):
     ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
-        maker = HTMLTreeMaker('[<span class="closed"> ... ]</span>')
+        maker = HTMLTreeMaker('[<span class="closed"> ... ],</span>')
         for x in self:
             node = x.get_html_node(is_change_view, color_scheme)
             if node.has_child():
-                node.setval(f"{node.getval()}")
                 tail = node.get(-1)
-                tail.setval(f"{tail.getval()},")
+                tail.addval(",")
             else:
-                node.setval(f"{node.getval()},")
+                node.addval(",")
             maker.add(node)
         maker.add("]", "t")
         return maker
