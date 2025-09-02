@@ -345,11 +345,11 @@ class DictBasicWrapper(BasicWrapper):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
-            self.__repr_line(k, v, is_change_view, seps, max_line_width, level, lines)
+            self.__subrepr(k, v, is_change_view, seps, max_line_width, level, lines)
         string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}" "}"
         return string
 
-    def __repr_line(
+    def __subrepr(
         self,
         k: "BasicObj",
         v: BasicWrapper,
@@ -366,7 +366,7 @@ class DictBasicWrapper(BasicWrapper):
                 return
             _status = ""
         if _status == "r":
-            self.__repr_line(
+            self.__subrepr(
                 k,
                 v.replaced_value(),
                 is_change_view,
@@ -461,35 +461,50 @@ class DictBasicWrapper(BasicWrapper):
         maker = HTMLTreeMaker("{")
         maker.addspan(" ... },", spancls="closed")
         for k, v in self.__obj.items():
-            if not is_change_view and v.get_status() == "d":
-                continue
-            _status = status if status else v.get_status()
-            node = v.get_html_node(is_change_view, color_scheme, _status)
-            if is_change_view:
-                color = colorful_style(color_scheme, _status)
-                node_value = f"{k!r}: {node.getval()}"
-                if node.has_child():
-                    node_value = f'<span style="{color}">' + node_value.replace(
-                        "<span", f'</span><span style="{color}"'
-                    )
-                    node.setval(node_value)
-                    tail = node.get(-1)
-                    tail_value = tail.getval()
-                    tail.setval("")
-                    tail.addspan(f"{tail_value},", style=color)
-                else:
-                    node.setval("")
-                    node.addspan(node_value + ",", style=color)
-            else:
-                node.setval(f"{k!r}: {node.getval()}")
-                if node.has_child():
-                    tail = node.get(-1)
-                    tail.addval(",")
-                else:
-                    node.addval(",")
-            maker.add(node)
+            self.__get_html_subnode(k, v, is_change_view, status, color_scheme, maker)
         maker.add("}", "t")
         return maker
+
+    def __get_html_subnode(
+        self,
+        k: "DataObj",
+        v: BasicWrapper,
+        is_change_view: bool,
+        status: "WrapperStatus",
+        color_scheme: "ColorScheme",
+        maker: HTMLTreeMaker,
+    ) -> HTMLTreeMaker:
+        if not is_change_view and v.is_deleted():
+            return
+        if is_change_view and v.get_status() == "r":
+            self.__get_html_subnode(
+                k, v.replaced_value(), True, "d", color_scheme, maker
+            )
+        _status = status if status else v.get_status()
+        node = v.get_html_node(is_change_view, color_scheme, _status)
+        if is_change_view:
+            color = colorful_style(color_scheme, _status)
+            node_value = f"{k!r}: {node.getval()}"
+            if node.has_child():
+                node_value = f'<span style="{color}">' + node_value.replace(
+                    "<span", f'</span><span style="{color}"'
+                )
+                node.setval(node_value)
+                tail = node.get(-1)
+                tail_value = tail.getval()
+                tail.setval("")
+                tail.addspan(f"{tail_value},", style=color)
+            else:
+                node.setval("")
+                node.addspan(node_value + ",", style=color)
+        else:
+            node.setval(f"{k!r}: {node.getval()}")
+            if node.has_child():
+                tail = node.get(-1)
+                tail.addval(",")
+            else:
+                node.addval(",")
+        maker.add(node)
 
     def recover(self) -> None:
         super().recover()
@@ -570,11 +585,11 @@ class ListBasicWrapper(BasicWrapper):
         lines: list[str] = []
         max_line_width = self.get_max_line_width()
         for x in self.__obj:
-            self.__repr_line(x, is_change_view, seps, max_line_width, level, lines)
+            self.__subrepr(x, is_change_view, seps, max_line_width, level, lines)
         string = "[\n" + "\n".join(lines) + f"\n{_sep(level)}" + "]"
         return string
 
-    def __repr_line(
+    def __subrepr(
         self,
         x: BasicWrapper,
         is_change_view: bool,
@@ -590,7 +605,7 @@ class ListBasicWrapper(BasicWrapper):
                 return
             _status = ""
         if _status == "r":
-            self.__repr_line(
+            self.__subrepr(
                 x.replaced_value(), is_change_view, seps, max_line_width, level, lines
             )
             _status = "a"
@@ -672,34 +687,46 @@ class ListBasicWrapper(BasicWrapper):
         maker = HTMLTreeMaker("[")
         maker.addspan(" ... ],", spancls="closed")
         for x in self.__obj:
-            if not is_change_view and x.get_status() == "d":
-                continue
-            _status = status if status else x.get_status()
-            node = x.get_html_node(is_change_view, color_scheme, _status)
-            if is_change_view:
-                color = colorful_style(color_scheme, _status)
-                node_value = node.getval()
-                if node.has_child():
-                    node_value = f'<span style="{color}">' + node_value.replace(
-                        "<span", f'</span><span style="{color}"'
-                    )
-                    node.setval(node_value)
-                    tail = node.get(-1)
-                    tail_value = tail.getval()
-                    tail.setval("")
-                    tail.addspan(f"{tail_value},", style=color)
-                else:
-                    node.setval("")
-                    node.addspan(node_value + ",", style=color)
-            else:
-                if node.has_child():
-                    tail = node.get(-1)
-                    tail.addval(",")
-                else:
-                    node.addval(",")
-            maker.add(node)
+            self.__get_html_subnode(x, is_change_view, status, color_scheme, maker)
         maker.add("]", "t")
         return maker
+
+    def __get_html_subnode(
+        self,
+        x: BasicWrapper,
+        is_change_view: bool,
+        status: "WrapperStatus",
+        color_scheme: "ColorScheme",
+        maker: HTMLTreeMaker,
+    ) -> HTMLTreeMaker:
+        if not is_change_view and x.is_deleted():
+            return
+        if is_change_view and x.get_status() == "r":
+            self.__get_html_subnode(x.replaced_value(), True, "d", color_scheme, maker)
+        _status = status if status else x.get_status()
+        node = x.get_html_node(is_change_view, color_scheme, _status)
+        if is_change_view:
+            color = colorful_style(color_scheme, _status)
+            node_value = node.getval()
+            if node.has_child():
+                node_value = f'<span style="{color}">' + node_value.replace(
+                    "<span", f'</span><span style="{color}"'
+                )
+                node.setval(node_value)
+                tail = node.get(-1)
+                tail_value = tail.getval()
+                tail.setval("")
+                tail.addspan(f"{tail_value},", style=color)
+            else:
+                node.setval("")
+                node.addspan(node_value + ",", style=color)
+        else:
+            if node.has_child():
+                tail = node.get(-1)
+                tail.addval(",")
+            else:
+                node.addval(",")
+        maker.add(node)
 
     def recover(self) -> None:
         super().recover()
