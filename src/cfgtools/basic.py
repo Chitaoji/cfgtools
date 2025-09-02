@@ -194,20 +194,19 @@ class BasicWrapper:
         return main_maker
 
     def get_html_node(
-        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+        self,
+        is_change_view: bool = False,
+        color_scheme: "ColorScheme" = "dark",
+        status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         """
         Return a plain HTMLTreeMaker object for representing the current
         node.
 
         """
+        _, _, _ = is_change_view, color_scheme, status
         value = repr(self.__obj).replace(">", "&gt").replace("<", "&lt")
-        if is_change_view:
-            node = HTMLTreeMaker()
-            node.addspan(value, style=colorful_style(color_scheme, self.get_status()))
-        else:
-            node = HTMLTreeMaker(value)
-        return node
+        return HTMLTreeMaker(value)
 
     def get_max_line_width(self) -> int:
         """Get the module variable `MAX_LINE_WIDTH`."""
@@ -451,9 +450,13 @@ class DictBasicWrapper(BasicWrapper):
         return self.unwrap()
 
     def get_html_node(
-        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+        self,
+        is_change_view: bool = False,
+        color_scheme: "ColorScheme" = "dark",
+        status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
-        if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
+        lenflat, flat = self.repr_flat(is_change_view)
+        if lenflat <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("{")
         maker.addspan(" ... },", spancls="closed")
@@ -461,12 +464,28 @@ class DictBasicWrapper(BasicWrapper):
             if not is_change_view and v.get_status() == "d":
                 continue
             node = v.get_html_node(is_change_view, color_scheme)
-            if node.has_child():
-                node.setval(f"{k!r}: {node.getval()}")
-                tail = node.get(-1)
-                tail.addval(",")
+            if is_change_view:
+                color = colorful_style(
+                    color_scheme, status if status else v.get_status()
+                )
+                node_value = f"{k!r}: {node.getval()}"
+                if node.has_child():
+                    node_value = f'<span style="{color}">' + node_value.replace(
+                        "<span", f'</span><span style="{color}"'
+                    )
+                    node.setval(node_value)
+                    tail = node.get(-1)
+                    tail.addspan(",", style=color)
+                else:
+                    node.setval("")
+                    node.addspan(node_value + ",", style=color)
             else:
-                node.setval(f"{k!r}: {node.getval()},")
+                node.setval(f"{k!r}: {node.getval()}")
+                if node.has_child():
+                    tail = node.get(-1)
+                    tail.addval(",")
+                else:
+                    node.addval(",")
             maker.add(node)
         maker.add("}", "t")
         return maker
@@ -641,7 +660,10 @@ class ListBasicWrapper(BasicWrapper):
         return self.unwrap()
 
     def get_html_node(
-        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+        self,
+        is_change_view: bool = False,
+        color_scheme: "ColorScheme" = "dark",
+        status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
