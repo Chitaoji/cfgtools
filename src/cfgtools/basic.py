@@ -204,7 +204,7 @@ class BasicWrapper:
         value = repr(self.__obj).replace(">", "&gt").replace("<", "&lt")
         if is_change_view:
             node = HTMLTreeMaker()
-            node.addspan(value, colorful_style(color_scheme, self.get_status()))
+            node.addspan(value, style=colorful_style(color_scheme, self.get_status()))
         else:
             node = HTMLTreeMaker(value)
         return node
@@ -455,7 +455,8 @@ class DictBasicWrapper(BasicWrapper):
     ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
-        maker = HTMLTreeMaker('{<span class="closed"> ... },</span>')
+        maker = HTMLTreeMaker("{")
+        maker.addspan(" ... },", spancls="closed")
         for k, v in self.__obj.items():
             if not is_change_view and v.get_status() == "d":
                 continue
@@ -644,7 +645,8 @@ class ListBasicWrapper(BasicWrapper):
     ) -> HTMLTreeMaker:
         if len(flat := repr(self.unwrap())) <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
-        maker = HTMLTreeMaker('[<span class="closed"> ... ],</span>')
+        maker = HTMLTreeMaker("[")
+        maker.addspan(" ... ],", spancls="closed")
         for x in self:
             node = x.get_html_node(is_change_view, color_scheme)
             if node.has_child():
