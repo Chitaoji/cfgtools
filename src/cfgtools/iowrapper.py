@@ -229,24 +229,6 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
         template.replace_flags()
         return template.fill(ConfigIOWrapper, self)
 
-    # def apply(self, template: "DataObj", /) -> None:
-    #     """
-    #     Apply the template.
-
-    #     NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
-    #     method.
-
-    #     """
-    #     if isinstance(template, ConfigIOWrapper):
-    #         template = ConfigTemplate(template.unwrap())
-    #     elif not isinstance(template, ConfigTemplate):
-    #         template = ConfigTemplate(template)
-
-    #     if template.has_flag(RETURN):
-    #         raise ValueError(f"{RETURN} tags are not supported in apply()")
-    #     if template.has_flag(YIELD):
-    #         raise ValueError(f"{YIELD} tags are not supported in apply()")
-
     def search(self, template: "DataObj", /) -> Self | None:
         """Search for the template at any level."""
         return self.match(template)
@@ -359,10 +341,13 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictBasicWrapper):
             return None
 
         new_data = {}
+        rest_items = list(self.items())
         for kt, vt in template.items():
-            for k, v in self.items():
+            for i, item in enumerate(rest_items):
+                k, v = item
                 if self.constructor(k).match(kt) and (matched := v.match(vt)):
                     new_data[k] = matched
+                    del rest_items[i]
                     break
             else:
                 return None
@@ -403,10 +388,12 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListBasicWrapper):
             return None
 
         new_data = []
+        rest_items = list(self)
         for xt in template:
-            for x in self:
+            for i, x in enumerate(rest_items):
                 if matched := x.match(xt):
                     new_data.append(matched)
+                    del rest_items[i]
                     break
             else:
                 return None
