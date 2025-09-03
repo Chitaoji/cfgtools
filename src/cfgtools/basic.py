@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .iowrapper import ConfigIOWrapper
 
 
-__all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER"]
+__all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER", "REPLACE"]
 
 
 MAX_LINE_WIDTH = 88
@@ -40,6 +40,7 @@ ANY = Flag("ANY")
 RETURN = Flag("RETURN")
 YIELD = Flag("YIELD")
 NEVER = Flag("NEVER")
+REPLACE = Flag("REPLACE")
 
 
 def colorful_console(string: str, status: "WrapperStatus", replaced: str = "") -> str:

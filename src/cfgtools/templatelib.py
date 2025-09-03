@@ -58,16 +58,17 @@ class ConfigTemplate(BasicWrapper):
         wrapper: "ConfigIOWrapper | None" = None,
     ) -> "ConfigIOWrapper":
         """Fill the template with an iowrapper."""
-        if isinstance(self.__obj, type):
-            if wrapper is not None and wrapper.isinstance(self.__obj):
+        obj = self.unwrap_top_level()
+        if self.isinstance(type):
+            if wrapper is not None and wrapper.isinstance(obj):
                 return wrapper.copy()
-            return constructor(self.__obj())
-        if isinstance(self.__obj, Callable):
-            if wrapper is not None and self.__obj(wrapper):
+            return constructor(obj())
+        if self.isinstance(Callable):
+            if wrapper is not None and obj(wrapper):
                 return wrapper.copy()
             return constructor(None)
         if wrapper is None:
-            return constructor(self.__obj)
+            return constructor(obj)
         return wrapper.copy()
 
     def delete(self) -> None:
@@ -91,7 +92,7 @@ class DictConfigTemplate(ConfigTemplate, DictBasicWrapper):
         constructor: type["ConfigIOWrapper"],
         wrapper: "ConfigIOWrapper | None" = None,
     ) -> "ConfigIOWrapper":
-        if not wrapper.isinstance(dict):
+        if wrapper is None or not wrapper.isinstance(dict):
             return constructor({k: v.fill(constructor) for k, v in self.items()})
 
         new_data = {}
@@ -119,7 +120,7 @@ class ListConfigTemplate(ConfigTemplate, ListBasicWrapper):
         constructor: type["ConfigIOWrapper"],
         wrapper: "ConfigIOWrapper | None" = None,
     ) -> "ConfigIOWrapper":
-        if not wrapper.isinstance(list):
+        if wrapper is None or not wrapper.isinstance(list):
             return constructor([x.fill(constructor) for x in self])
 
         new_data = []

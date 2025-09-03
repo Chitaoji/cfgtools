@@ -12,7 +12,14 @@ from typing import TYPE_CHECKING, Callable, Self
 
 from htmlmaster import HTMLTreeMaker
 
-from .basic import RETURN, YIELD, BasicWrapper, DictBasicWrapper, ListBasicWrapper
+from .basic import (
+    REPLACE,
+    RETURN,
+    YIELD,
+    BasicWrapper,
+    DictBasicWrapper,
+    ListBasicWrapper,
+)
 from .saver import ConfigSaver, FileFormatError
 from .templatelib import ConfigTemplate
 
@@ -157,6 +164,9 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
         elif not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
+        if template.has_flag(REPLACE):
+            raise ValueError(f"'{REPLACE}' tags are not supported in match()")
+
         recorder = template.replace_flags()
 
         if template.isinstance((dict, list)):
@@ -194,7 +204,7 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
             return matched
         return None
 
-    def safematch(self, template: "DataObj", /) -> Self | None:
+    def safematch(self, template: "DataObj", /) -> Self:
         """
         Match the whole template from the top level. Differences to
         `self.fullmatch()` that the result will always be an instance
@@ -210,12 +220,32 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
             template = ConfigTemplate(template)
 
         if template.has_flag(RETURN):
-            raise ValueError("'RETURN' tags are not supported in safematch()")
+            raise ValueError(f"'{RETURN}' tags are not supported in safematch()")
         if template.has_flag(YIELD):
-            raise ValueError("'YIELD' tags are not supported in safematch()")
+            raise ValueError(f"'{YIELD}' tags are not supported in safematch()")
+        if template.has_flag(REPLACE):
+            raise ValueError(f"'{REPLACE}' tags are not supported in safematch()")
 
         template.replace_flags()
         return template.fill(ConfigIOWrapper, self)
+
+    # def apply(self, template: "DataObj", /) -> None:
+    #     """
+    #     Apply the template.
+
+    #     NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
+    #     method.
+
+    #     """
+    #     if isinstance(template, ConfigIOWrapper):
+    #         template = ConfigTemplate(template.unwrap())
+    #     elif not isinstance(template, ConfigTemplate):
+    #         template = ConfigTemplate(template)
+
+    #     if template.has_flag(RETURN):
+    #         raise ValueError(f"{RETURN} tags are not supported in apply()")
+    #     if template.has_flag(YIELD):
+    #         raise ValueError(f"{YIELD} tags are not supported in apply()")
 
     def search(self, template: "DataObj", /) -> Self | None:
         """Search for the template at any level."""
