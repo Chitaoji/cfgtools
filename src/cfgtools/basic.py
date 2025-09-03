@@ -815,7 +815,7 @@ class ListBasicWrapper(BasicWrapper):
                     x.recover()
 
     def has_flag(self, flag: Flag, /) -> bool:
-        return any(x.has_flag() for x in self)
+        return any(x.has_flag(flag) for x in self)
 
     def replace_flags(
         self, recorder: dict[str, "DataObj"] | None = None, /
