@@ -9,7 +9,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Self
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Self
 
 from htmlmaster import HTMLTreeMaker
 
@@ -31,9 +31,16 @@ class Flag:
     """Config flags."""
 
     name: str
+    value: Any = None
 
     def __repr__(self) -> str:
         return self.name
+
+    def __matmul__(self, value: Any, /) -> Self:
+        return Flag(self.name, value)
+
+    def __eq__(self, other: Any, /) -> bool:
+        return isinstance(other, self.__class__) and other.name == self.name
 
 
 ANY = Flag("ANY")
