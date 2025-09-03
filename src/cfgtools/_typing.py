@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Callable, Literal
 
 import loggings
 
-from .tpl import ConfigTemplate, Flag
+from .basic import BasicWrapper
+from .templatelib import Flag
 
 if TYPE_CHECKING:
     from .iowrapper import ConfigIOWrapper
@@ -20,7 +21,9 @@ BasicObj = str | int | float | bool | None | type | Callable | Flag
 UnwrappedDataObj = (
     dict[BasicObj, "UnwrappedDataObj"] | list["UnwrappedDataObj"] | BasicObj
 )
-DataObj = dict[BasicObj, "DataObj"] | list["DataObj"] | BasicObj | ConfigTemplate
+DataObj = dict[BasicObj, "DataObj"] | list["DataObj"] | BasicObj | BasicWrapper
 ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
 ]
+ColorScheme = Literal["dark", "modern", "high-intensty"]
+WrapperStatus = Literal["", "a", "d", "r"]

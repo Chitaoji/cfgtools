@@ -8,14 +8,22 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 import json
 import pickle
-from configparser import ConfigParser, MissingSectionHeaderError
+from configparser import (
+    ConfigParser,
+    DuplicateSectionError,
+    MissingSectionHeaderError,
+    ParsingError,
+)
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
+import toml
 import yaml
-from yaml.scanner import ScannerError
+from yaml import MarkedYAMLError
+from yaml.reader import ReaderError
 
-from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper, FileFormatError
+from .iowrapper import FORMAT_MAPPING, ConfigIOWrapper
+from .saver import FileFormatError
 
 if TYPE_CHECKING:
     from ._typing import ConfigFileFormat, UnwrappedDataObj
@@ -26,10 +34,9 @@ __all__ = [
     "read_pickle",
     "read_json",
     "read_ini",
+    "read_toml",
     "read_text",
-    "read_config_from_text",
     "read_bytes",
-    "read_config_from_bytes",
 ]
 
 
@@ -153,7 +160,33 @@ def read_ini(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrappe
     return ConfigIOWrapper(obj, "ini", path=path, encoding=encoding)
 
 
-def read_text(path: str | Path, /, encoding: str | None = None) -> str:
+def read_toml(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
+    """
+    Read a toml file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path of the toml file.
+    encoding : str | None, optional
+        The name of the encoding used to decode or encode the file,
+        by default None.
+
+    Returns
+    --------
+    ConfigIOWrapper
+        A wrapper for reading and writing config files.
+
+    """
+    encoding = detect_encoding(path) if encoding is None else encoding
+    with open(path, "r", encoding=encoding) as f:
+        obj = toml.load(f)
+    if len(obj) == 1 and "null" in obj:
+        obj = obj["null"]
+    return ConfigIOWrapper(obj, "toml", path=path, encoding=encoding)
+
+
+def read_text(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read plain text from a text file.
 
@@ -167,39 +200,16 @@ def read_text(path: str | Path, /, encoding: str | None = None) -> str:
 
     Returns
     --------
-    str
-        Plain text.
-
-    """
-    encoding = detect_encoding(path) if encoding is None else encoding
-    return Path(path).read_text(encoding=encoding)
-
-
-def read_config_from_text(
-    path: str | Path, /, encoding: str | None = None
-) -> ConfigIOWrapper:
-    """
-    Read config from a text file.
-
-    Parameters
-    ----------
-    path : str | Path
-        Path of the text file.
-    encoding : str | None, optional
-        The name of the encoding used to decode or encode the file,
-        by default None.
-
-    Returns
-    --------
     ConfigIOWrapper
         A wrapper for reading and writing config files.
 
     """
-    cfg = _obj_restore(read_text(path, encoding=encoding))
+    encoding = detect_encoding(path) if encoding is None else encoding
+    cfg = Path(path).read_text(encoding=encoding)
     return ConfigIOWrapper(cfg, "text", path=path, encoding=encoding)
 
 
-def read_bytes(path: str | Path, /, encoding: str | None = None) -> bytes:
+def read_bytes(path: str | Path, /, encoding: str | None = None) -> ConfigIOWrapper:
     """
     Read bytes from a bytes file.
 
@@ -213,35 +223,12 @@ def read_bytes(path: str | Path, /, encoding: str | None = None) -> bytes:
 
     Returns
     --------
-    bytes
-        Bytes.
-
-    """
-    encoding = detect_encoding(path) if encoding is None else encoding
-    return Path(path).read_bytes()
-
-
-def read_config_from_bytes(
-    path: str | Path, encoding: str | None = None
-) -> ConfigIOWrapper:
-    """
-    Read a bytes file.
-
-    Parameters
-    ----------
-    path : str | Path
-        Path of the bytes file.
-    encoding : str | None, optional
-        The name of the encoding used to decode or encode the file,
-        by default None.
-
-    Returns
-    --------
     ConfigIOWrapper
         A wrapper for reading and writing config files.
 
     """
-    cfg = _obj_restore(read_bytes(path, encoding=encoding))
+    encoding = detect_encoding(path) if encoding is None else encoding
+    cfg = Path(path).read_bytes().decode(encoding)
     return ConfigIOWrapper(cfg, "bytes", path=path, encoding=encoding)
 
 
@@ -262,8 +249,9 @@ class ConfigReader:
         "ini": read_ini,
         "json": read_json,
         "yaml": read_yaml,
-        "text": read_config_from_text,
-        "bytes": read_config_from_bytes,
+        "toml": read_toml,
+        "text": read_text,
+        "bytes": read_bytes,
     }
 
     @classmethod
@@ -293,8 +281,8 @@ class ConfigReader:
             cls.__try_ini,
             cls.__try_json,
             cls.__try_yaml,
-            cls.__try_config_from_text,
-            read_config_from_bytes,
+            cls.__try_toml,
+            cls.__try_text,
         )
         for m in try_methods:
             if (wrapper := m(path, encoding=encoding)) is not None:
@@ -317,7 +305,7 @@ class ConfigReader:
     ) -> ConfigIOWrapper | None:
         try:
             return read_ini(path, encoding=encoding)
-        except MissingSectionHeaderError:
+        except (MissingSectionHeaderError, ParsingError, DuplicateSectionError):
             return None
 
     @staticmethod
@@ -335,16 +323,20 @@ class ConfigReader:
     ) -> ConfigIOWrapper | None:
         try:
             return read_yaml(path, encoding=encoding)
-        except yaml.reader.ReaderError:
-            return None
-        except ScannerError:
+        except (ReaderError, MarkedYAMLError):
             return None
 
     @staticmethod
-    def __try_config_from_text(
+    def __try_toml(
         path: str | Path, /, encoding: str | None = None
     ) -> ConfigIOWrapper | None:
         try:
-            return read_config_from_text(path, encoding=encoding)
-        except UnicodeDecodeError:
+            return read_toml(path, encoding=encoding)
+        except (ReaderError, MarkedYAMLError):
             return None
+
+    @staticmethod
+    def __try_text(
+        path: str | Path, /, encoding: str | None = None
+    ) -> ConfigIOWrapper | None:
+        return read_text(path, encoding=encoding)

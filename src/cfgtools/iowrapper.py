@@ -6,32 +6,35 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Self
 
 from htmlmaster import HTMLTreeMaker
 
-from .saver import ConfigSaver
-from .tpl import (
+from .basic import (
+    REPLACE,
     RETURN,
     YIELD,
-    ConfigTemplate,
-    DictConfigTemplate,
-    Flag,
-    ListConfigTemplate,
+    BasicWrapper,
+    DictBasicWrapper,
+    ListBasicWrapper,
 )
+from .saver import ConfigSaver, FileFormatError
+from .templatelib import ConfigTemplate
 
 if TYPE_CHECKING:
-    from ._typing import ConfigFileFormat, DataObj
+    from ._typing import ColorScheme, ConfigFileFormat, DataObj, UnwrappedDataObj
 
 NoneType = type(None)
 
-__all__ = ["FileFormatError"]
+__all__ = []
 
 
 SUFFIX_MAPPING = {
     ".yaml": "yaml",
     ".yml": "yaml",
+    ".toml": "toml",
     ".pickle": "pickle",
     ".pkl": "pickle",
     ".json": "json",
@@ -42,6 +45,7 @@ SUFFIX_MAPPING = {
 FORMAT_MAPPING = {
     "yaml": "yaml",
     "yml": "yaml",
+    "toml": "toml",
     "pickle": "pickle",
     "pkl": "pickle",
     "json": "json",
@@ -52,7 +56,7 @@ FORMAT_MAPPING = {
 }
 
 
-class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
+class ConfigIOWrapper(BasicWrapper, ConfigSaver):
     """
     A wrapper for reading and writing config files.
 
@@ -125,17 +129,14 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             s = self.repr()
         return f"cfgtools.config({s})"
 
-    def _repr_mimebundle_(self, *_, **__) -> dict[str, str]:
-        return {"text/html": self.to_html().make()}
-
-    def to_html(self) -> HTMLTreeMaker:
-        main_maker = super().to_html()
-        main_maker.add(
-            (
-                f"format: {self.fileformat!r} | path: {self.path!r} "
-                f"| encoding: {self.encoding!r}"
-            ),
-            "i",
+    def to_html(
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
+    ) -> HTMLTreeMaker:
+        main_maker = super().to_html(is_change_view, color_scheme)
+        main_maker.add("", licls="i")
+        main_maker.get(-1).addspan(
+            f"format: {self.fileformat!r} | path: {self.path!r} "
+            f"| encoding: {self.encoding!r}"
         )
         return main_maker
 
@@ -157,23 +158,26 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         self.overwrite_ok = True
 
     def match(self, template: "DataObj", /) -> Self | None:
+        """Match the template from the top level."""
         if isinstance(template, ConfigIOWrapper):
             template = ConfigTemplate(template.unwrap())
         elif not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
-        recorder = template.replace_flags()
-        unwrapped = template.unwrap_top_level()
+        if template.has_flag(REPLACE):
+            raise ValueError(f"'{REPLACE}' tags are not supported in match()")
 
-        if isinstance(unwrapped, (dict, list)):
+        recorder = template.replace_flags()
+
+        if template.isinstance((dict, list)):
             return None
-        if isinstance(unwrapped, type):
-            if isinstance(self.unwrap_top_level(), unwrapped):
+        if template.isinstance(type):
+            if self.isinstance(template.unwrap_top_level()):
                 return self.copy()
-        elif isinstance(unwrapped, Callable):
-            if unwrapped(self):
+        elif template.isinstance(Callable):
+            if template.unwrap_top_level()(self):
                 return self.copy()
-        elif self.unwrap_top_level() == unwrapped:
+        elif self.unwrap_top_level() == template.unwrap_top_level():
             return self.copy()
 
         if recorder:
@@ -181,6 +185,7 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         return None
 
     def fullmatch(self, template: "DataObj", /) -> Self | None:
+        """Match the whole template from the top level."""
         if isinstance(template, ConfigIOWrapper):
             template = ConfigTemplate(template.unwrap())
         elif not isinstance(template, ConfigTemplate):
@@ -199,30 +204,34 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
             return matched
         return None
 
-    def safematch(self, template: "DataObj", /) -> Self | None:
+    def safematch(self, template: "DataObj", /) -> Self:
+        """
+        Match the whole template from the top level. Differences to
+        `self.fullmatch()` that the result will always be an instance
+        of self.
+
+        NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
+        method.
+
+        """
         if isinstance(template, ConfigIOWrapper):
             template = ConfigTemplate(template.unwrap())
         elif not isinstance(template, ConfigTemplate):
             template = ConfigTemplate(template)
 
         if template.has_flag(RETURN):
-            raise ValueError("'RETURN' tags are not supported in safematch()")
+            raise ValueError(f"'{RETURN}' tags are not supported in safematch()")
         if template.has_flag(YIELD):
-            raise ValueError("'YIELD' tags are not supported in safematch()")
+            raise ValueError(f"'{YIELD}' tags are not supported in safematch()")
+        if template.has_flag(REPLACE):
+            raise ValueError(f"'{REPLACE}' tags are not supported in safematch()")
 
         template.replace_flags()
         return template.fill(ConfigIOWrapper, self)
 
     def search(self, template: "DataObj", /) -> Self | None:
+        """Search for the template at any level."""
         return self.match(template)
-
-    def has_flag(self, flag: Flag, /) -> bool:
-        raise TypeError("method has_flag() is available only on templates")
-
-    def replace_flags(
-        self, recorder: dict[str, "DataObj"] | None = None, /
-    ) -> dict[str, "DataObj"]:
-        raise TypeError("method replace_flags() is available only on templates")
 
     def save(
         self,
@@ -280,8 +289,39 @@ class ConfigIOWrapper(ConfigTemplate, ConfigSaver):
         else:
             raise FileFormatError(f"unsupported config file format: {fileformat!r}")
 
+    def as_ini_dict(self) -> dict:
+        obj = self.unwrap()
+        if isinstance(obj, dict):
+            if all(isinstance(v, dict) for v in obj.values()):
+                return {
+                    k: {x: json.dumps(y) for x, y in v.items()} for k, v in obj.items()
+                }
+            return {"null": {k: json.dumps(v) for k, v in obj.items()}}
+        return {"null": {"null": json.dumps(obj)}}
 
-class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
+    def as_toml_dict(self) -> dict:
+        obj = self.unwrap()
+        if not isinstance(obj, dict):
+            obj = {"null": obj}
+        return _as_toml(obj)
+
+
+def _as_toml(obj: "UnwrappedDataObj") -> "UnwrappedDataObj":
+    if isinstance(obj, dict):
+        return {k: _as_toml(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        type_list = [type(x) for x in obj]
+        if dict in type_list:
+            if all(t is dict for t in type_list):
+                return [_as_toml(x) for x in obj]
+            return [
+                _as_toml(list(x)) if isinstance(x, dict) else _as_toml(x) for x in obj
+            ]
+        return [_as_toml(x) for x in obj]
+    return obj
+
+
+class DictConfigIOWrapper(ConfigIOWrapper, DictBasicWrapper):
     """A wrapper for reading and writing config files."""
 
     constructor = ConfigIOWrapper
@@ -294,18 +334,20 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        unwrapped = template.unwrap_top_level()
 
-        if matched := super().match(unwrapped):
+        if matched := super().match(template):
             return matched
-        if not isinstance(unwrapped, dict):
+        if not template.isinstance(dict):
             return None
 
         new_data = {}
-        for kt, vt in unwrapped.items():
-            for k, v in self.items():
+        rest_items = list(self.items())
+        for kt, vt in template.items():
+            for i, item in enumerate(rest_items):
+                k, v = item
                 if self.constructor(k).match(kt) and (matched := v.match(vt)):
                     new_data[k] = matched
+                    del rest_items[i]
                     break
             else:
                 return None
@@ -326,7 +368,7 @@ class DictConfigIOWrapper(ConfigIOWrapper, DictConfigTemplate):
         return None
 
 
-class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
+class ListConfigIOWrapper(ConfigIOWrapper, ListBasicWrapper):
     """A wrapper for reading and writing config files."""
 
     constructor = ConfigIOWrapper
@@ -339,18 +381,19 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
             template = ConfigTemplate(template)
 
         recorder = template.replace_flags()
-        unwrapped = template.unwrap_top_level()
 
-        if matched := super().match(unwrapped):
+        if matched := super().match(template):
             return matched
-        if not isinstance(unwrapped, list):
+        if not template.isinstance(list):
             return None
 
         new_data = []
-        for xt in unwrapped:
-            for x in self:
+        rest_items = list(self)
+        for xt in template:
+            for i, x in enumerate(rest_items):
                 if matched := x.match(xt):
                     new_data.append(matched)
+                    del rest_items[i]
                     break
             else:
                 return None
@@ -369,7 +412,3 @@ class ListConfigIOWrapper(ConfigIOWrapper, ListConfigTemplate):
             if searched := x.search(template):
                 return searched
         return None
-
-
-class FileFormatError(Exception):
-    """Raised if the file format is not supported."""
