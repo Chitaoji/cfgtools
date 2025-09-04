@@ -67,8 +67,8 @@ This project falls under the BSD 3-Clause License.
 * Bugfix when reading text files.
 
 ### v0.0.8
-* Add a simple cli command `cfg [OPTIONS] FILENAME`.
-* Rename `ConfigIOWrapper.safematch()` to `ConfigIOWrapper.adapt()`.
+* Added a simple cli command `cfg [OPTIONS] FILENAME`.
+* Renamed `ConfigIOWrapper.safematch()` to `ConfigIOWrapper.adapt()`.
 
 ### v0.0.7
 * New method for `BasicWrapper`: `*.asstr()`, `*.asint()`, `*.asfloat()`, `*.asbool()`, `*.asnone()`.
