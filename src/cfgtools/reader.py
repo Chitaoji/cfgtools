@@ -332,7 +332,7 @@ class ConfigReader:
     ) -> ConfigIOWrapper | None:
         try:
             return read_toml(path, encoding=encoding)
-        except (ReaderError, MarkedYAMLError):
+        except toml.decoder.TomlDecodeError:
             return None
 
     @staticmethod
