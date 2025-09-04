@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfgtools"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
   "pyyaml",
   "lazyr",
@@ -33,3 +33,5 @@ classifiers = [
 Documentation = "https://github.com/Chitaoji/cfgtools/blob/main/README.md"
 Repository = "https://github.com/Chitaoji/cfgtools/"
 
+[project.scripts]
+cfg = "cfgtools.cli:run"

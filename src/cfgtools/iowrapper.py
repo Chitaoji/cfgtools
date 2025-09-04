@@ -203,11 +203,9 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
             return matched
         return None
 
-    def safematch(self, template: "DataObj", /) -> Self:
+    def adapt(self, template: "DataObj", /) -> Self:
         """
-        Match the whole template from the top level. Differences to
-        `self.fullmatch()` that the result will always be an instance
-        of self.
+        Adapt to the template from the top level.
 
         NOTE: 'RETURN' tags and 'YIELD' tags are not supported in this
         method.
