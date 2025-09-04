@@ -230,7 +230,7 @@ class BasicWrapper:
         """Returns the data, with only the top level unwrapped."""
         return self.__obj
 
-    def isinstance(self, cls: type | list[type]) -> bool:
+    def isinstance(self, cls: type | Iterable[type]) -> bool:
         """Returns whether config is an instance of cls."""
         return isinstance(self.__obj, cls)
 
@@ -240,11 +240,41 @@ class BasicWrapper:
 
     def asdict(self) -> dict["BasicObj", "UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a mapping."""
-        raise TypeError(f"{self.__desc()} can't be converted into a dict")
+        raise TypeError(f"{self.__desc()} is not convertible to 'dict'")
 
     def aslist(self) -> list["UnwrappedDataObj"]:
         """Returns the unwrapped data if it's a list."""
-        raise TypeError(f"{self.__desc()} can't be converted into a list")
+        raise TypeError(f"{self.__desc()} is not convertible to 'list'")
+
+    def asstr(self) -> str:
+        """Returns the unwrapped data as a str."""
+        if self.isinstance((str, int, float, bool, type(None))):
+            return str(self.__obj)
+        raise TypeError(f"{self.__desc()} is not convertible to 'str'")
+
+    def asint(self) -> int:
+        """Returns the unwrapped data as an int."""
+        if self.isinstance((str, int, float, bool)):
+            return int(self.__obj)
+        raise TypeError(f"{self.__desc()} is not convertible to 'int'")
+
+    def asfloat(self) -> float:
+        """Returns the unwrapped data as a float."""
+        if self.isinstance((str, int, float, bool)):
+            return float(self.__obj)
+        raise TypeError(f"{self.__desc()} is not convertible to 'float'")
+
+    def asbool(self) -> bool:
+        """Returns the unwrapped data as a bool."""
+        if self.isinstance((str, int, float, bool)):
+            return bool(self.__obj)
+        raise TypeError(f"{self.__desc()} is not convertible to 'bool'")
+
+    def asnone(self) -> None:
+        """Returns the unwrapped data if it's None."""
+        if self.isinstance(type(None)):
+            return None
+        raise TypeError(f"{self.__desc()} is not convertible to 'None'")
 
     def to_html(
         self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
@@ -348,7 +378,7 @@ class BasicWrapper:
         return recorder
 
     def __desc(self) -> str:
-        return f"config of {self.get_type()}"
+        return f"config of type {self.get_type()}"
 
 
 class DictBasicWrapper(BasicWrapper):

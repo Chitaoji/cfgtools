@@ -26,7 +26,6 @@ from .templatelib import ConfigTemplate
 if TYPE_CHECKING:
     from ._typing import ColorScheme, ConfigFileFormat, DataObj, UnwrappedDataObj
 
-NoneType = type(None)
 
 __all__ = []
 
@@ -79,7 +78,7 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
 
     """
 
-    valid_types = str, int, float, bool, NoneType
+    valid_types = str, int, float, bool, type(None)
     constructor = object
     sub_constructors = {
         dict: lambda: DictConfigIOWrapper,
