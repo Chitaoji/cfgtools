@@ -63,6 +63,10 @@ If user wants to check the changed items, run:
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.8
+* Add a simple cli command `cfg [OPTIONS] FILENAME`.
+* Rename `ConfigIOWrapper.safematch()` to `ConfigIOWrapper.adapt()`.
+
 ### v0.0.7
 * New method for `BasicWrapper`: `*.asstr()`, `*.asint()`, `*.asfloat()`, `*.asbool()`, `*.asnone()`.
 
