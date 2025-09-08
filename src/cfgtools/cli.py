@@ -14,5 +14,5 @@ from .core import read
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.argument("filename")
 def run(filename: str) -> None:
-    """Run command."""
+    """Read and display a config file."""
     print(read(filename))
