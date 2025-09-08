@@ -34,4 +34,4 @@ Documentation = "https://github.com/Chitaoji/cfgtools/blob/main/README.md"
 Repository = "https://github.com/Chitaoji/cfgtools/"
 
 [project.scripts]
-cfg = "cfgtools.cli:run"
+cfg = "cfgtools.__main__:run"
