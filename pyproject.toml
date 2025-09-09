@@ -11,6 +11,7 @@ dependencies = [
   "Faker",
   "htmlmaster",
   "toml",
+  "click"
 ]
 requires-python = ">=3.12"
 authors = [
