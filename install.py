@@ -1,14 +1,4 @@
-"""
-Setup the package.
-
-To use the full functionality of this file, you must:
-
-```sh
-$ pip install build
-$ pip install pyyaml
-$ pip install re-extensions
-```
-"""
+"""Install the package."""
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -31,12 +21,11 @@ HOMEPAGE: Final[str] = project["urls"]["Repository"]
 REQUIRES: Final[list[str]] = project["dependencies"]
 SOURCE = "src"
 LICENSE = (here / project["license-files"][0]).read_text().partition("\n")[0]
-VERSION = project["version"]
 
 # Import the README and use it as the long-description.
 readme_path = here / project["readme"]
 if readme_path.exists():
-    long_description = "\n" + readme_path.read_text()
+    long_description = "\n" + readme_path.read_text(encoding="utf-8")
 else:
     long_description = SUMMARY
 
@@ -94,10 +83,6 @@ def _quote(readme: str) -> str:
         return f'"""{readme}"""'
 
 
-def _version(version: str = VERSION) -> str:
-    return f'"""Version file."""\n\n__version__ = "{version}"\n'
-
-
 class ReadmeFormatError(Exception):
     """Raised when the README has a wrong format."""
 
@@ -105,13 +90,11 @@ class ReadmeFormatError(Exception):
 if __name__ == "__main__":
     # Import the __init__.py and change the module docstring.
     init_path = here / SOURCE / NAME / "__init__.py"
-    version_path = here / SOURCE / NAME / "_version.py"
-    module_file = init_path.read_text()
+    module_file = init_path.read_text(encoding="utf-8")
     new_doc, long_description = _readme2doc(long_description)
     module_file = re.sub(
         "^\"\"\".*\"\"\"|^'''.*'''|^", _quote(new_doc), module_file, flags=re.DOTALL
     )
-    init_path.write_text(module_file)
-    readme_path.write_text(long_description.strip())
-    version_path.write_text(_version())
+    init_path.write_text(module_file, encoding="utf-8")
+    readme_path.write_text(long_description.strip(), encoding="utf-8")
     os.system(f"cd {here} && python -m build")
