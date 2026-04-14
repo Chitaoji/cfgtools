@@ -69,7 +69,7 @@ def config(data: "DataObj" = None, /) -> ConfigIOWrapper:
     Returns
     -------
     ConfigIOWrapper
-        A wrapper for reading and writing config files.
+        A wrapper for reading and writing configs.
 
     """
     return ConfigIOWrapper(data)
