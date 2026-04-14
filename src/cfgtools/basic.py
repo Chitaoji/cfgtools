@@ -574,23 +574,21 @@ class DictBasicWrapper(BasicWrapper):
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("{")
         maker.addspan(" ... },", spancls="closed")
-        overflow_maker = HTMLTreeMaker("...")
-        has_overflow = False
+        current_maker = maker
         visible_children = 0
         for k, v in self.__obj.items():
             target = maker
-            if (
-                not is_change_view
-                and not v.is_deleted()
-                and visible_children >= MAX_HTML_PARALLEL_CHILDREN
-            ):
-                target = overflow_maker
-                has_overflow = True
-            elif not is_change_view and not v.is_deleted():
+            if not is_change_view and not v.is_deleted():
+                if (
+                    visible_children > 0
+                    and visible_children % MAX_HTML_PARALLEL_CHILDREN == 0
+                ):
+                    overflow_maker = HTMLTreeMaker("...")
+                    current_maker.add(overflow_maker)
+                    current_maker = overflow_maker
+                target = current_maker
                 visible_children += 1
             self.__get_html_subnode(k, v, is_change_view, status, color_scheme, target)
-        if has_overflow:
-            maker.add(overflow_maker)
         maker.add("}", "t")
         return maker
 
@@ -826,23 +824,21 @@ class ListBasicWrapper(BasicWrapper):
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("[")
         maker.addspan(" ... ],", spancls="closed")
-        overflow_maker = HTMLTreeMaker("...")
-        has_overflow = False
+        current_maker = maker
         visible_children = 0
         for x in self.__obj:
             target = maker
-            if (
-                not is_change_view
-                and not x.is_deleted()
-                and visible_children >= MAX_HTML_PARALLEL_CHILDREN
-            ):
-                target = overflow_maker
-                has_overflow = True
-            elif not is_change_view and not x.is_deleted():
+            if not is_change_view and not x.is_deleted():
+                if (
+                    visible_children > 0
+                    and visible_children % MAX_HTML_PARALLEL_CHILDREN == 0
+                ):
+                    overflow_maker = HTMLTreeMaker("...")
+                    current_maker.add(overflow_maker)
+                    current_maker = overflow_maker
+                target = current_maker
                 visible_children += 1
             self.__get_html_subnode(x, is_change_view, status, color_scheme, target)
-        if has_overflow:
-            maker.add(overflow_maker)
         maker.add("]", "t")
         return maker
 
