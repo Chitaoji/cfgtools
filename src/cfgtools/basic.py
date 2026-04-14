@@ -24,7 +24,6 @@ __all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER", "REPLACE"]
 
 
 MAX_LINE_WIDTH = 88
-MAX_HTML_PARALLEL_CHILDREN = 5
 
 
 @dataclass(unsafe_hash=True)
@@ -574,21 +573,8 @@ class DictBasicWrapper(BasicWrapper):
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("{")
         maker.addspan(" ... },", spancls="closed")
-        current_maker = maker
-        visible_children = 0
         for k, v in self.__obj.items():
-            target = maker
-            if not is_change_view and not v.is_deleted():
-                if (
-                    visible_children > 0
-                    and visible_children % MAX_HTML_PARALLEL_CHILDREN == 0
-                ):
-                    overflow_maker = HTMLTreeMaker("...")
-                    current_maker.add(overflow_maker)
-                    current_maker = overflow_maker
-                target = current_maker
-                visible_children += 1
-            self.__get_html_subnode(k, v, is_change_view, status, color_scheme, target)
+            self.__get_html_subnode(k, v, is_change_view, status, color_scheme, maker)
         maker.add("}", "t")
         return maker
 
@@ -824,21 +810,8 @@ class ListBasicWrapper(BasicWrapper):
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("[")
         maker.addspan(" ... ],", spancls="closed")
-        current_maker = maker
-        visible_children = 0
         for x in self.__obj:
-            target = maker
-            if not is_change_view and not x.is_deleted():
-                if (
-                    visible_children > 0
-                    and visible_children % MAX_HTML_PARALLEL_CHILDREN == 0
-                ):
-                    overflow_maker = HTMLTreeMaker("...")
-                    current_maker.add(overflow_maker)
-                    current_maker = overflow_maker
-                target = current_maker
-                visible_children += 1
-            self.__get_html_subnode(x, is_change_view, status, color_scheme, target)
+            self.__get_html_subnode(x, is_change_view, status, color_scheme, maker)
         maker.add("]", "t")
         return maker
 
