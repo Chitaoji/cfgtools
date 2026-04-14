@@ -567,18 +567,10 @@ class DictBasicWrapper(BasicWrapper):
         color_scheme: "ColorScheme" = "dark",
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
-        visible_children_count = (
-            sum(not v.is_deleted() for v in self.__obj.values())
-            if not is_change_view
-            else len(self.__obj)
-        )
         lenflat, flat = self.repr_flat(
             is_change_view, partial(colorful_span, color_scheme)
         )
-        if (
-            lenflat <= self.get_max_line_width()
-            and visible_children_count <= MAX_HTML_PARALLEL_CHILDREN
-        ):
+        if lenflat <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("{")
         maker.addspan(" ... },", spancls="closed")
@@ -825,18 +817,10 @@ class ListBasicWrapper(BasicWrapper):
         color_scheme: "ColorScheme" = "dark",
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
-        visible_children_count = (
-            sum(not x.is_deleted() for x in self.__obj)
-            if not is_change_view
-            else len(self.__obj)
-        )
         lenflat, flat = self.repr_flat(
             is_change_view, partial(colorful_span, color_scheme)
         )
-        if (
-            lenflat <= self.get_max_line_width()
-            and visible_children_count <= MAX_HTML_PARALLEL_CHILDREN
-        ):
+        if lenflat <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
         maker = HTMLTreeMaker("[")
         maker.addspan(" ... ],", spancls="closed")
