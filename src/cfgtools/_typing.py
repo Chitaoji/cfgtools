@@ -25,5 +25,5 @@ DataObj = dict[BasicObj, "DataObj"] | list["DataObj"] | BasicObj | BasicWrapper
 ConfigFileFormat = Literal[
     "yaml", "yml", "pickle", "pkl", "json", "ini", "text", "txt", "bytes"
 ]
-ColorScheme = Literal["dark", "modern", "high-intensty", "light"]
+ColorScheme = Literal["auto", "dark", "modern", "high-intensty", "light"]
 WrapperStatus = Literal["", "a", "d", "r"]
