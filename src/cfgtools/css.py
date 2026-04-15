@@ -46,19 +46,3 @@ TREE_CSS_STYLE = """<style type="text/css">
 }}
 </style>
 """
-
-AUTO_CHANGE_VIEW_CSS_STYLE = """<style type="text/css">
-.cfgtools-tree {
-    --cfgtools-text: #cccccc;
-    --cfgtools-red: #4d2f2f;
-    --cfgtools-green: #2f4d2f;
-}
-@media (prefers-color-scheme: light) {
-    .cfgtools-tree {
-        --cfgtools-text: #1f2328;
-        --cfgtools-red: #ffd8d3;
-        --cfgtools-green: #d9f2d9;
-    }
-}
-</style>
-"""

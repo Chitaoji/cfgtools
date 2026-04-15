@@ -129,7 +129,7 @@ class ConfigIOWrapper(BasicWrapper, ConfigSaver):
         return f"cfgtools.config({s})"
 
     def to_html(
-        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "auto"
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
     ) -> HTMLTreeMaker:
         main_maker = super().to_html(is_change_view, color_scheme)
         main_maker.add("", licls="i")
