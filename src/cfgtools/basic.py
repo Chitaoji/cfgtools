@@ -6,7 +6,6 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
-import os
 import sys
 from dataclasses import dataclass
 from functools import partial
@@ -52,84 +51,17 @@ REPLACE = Flag("REPLACE")
 
 def colorful_string(string: str, status: "WrapperStatus", replaced: str = "") -> str:
     """Make a colorful string in console."""
-    r_bg, g_bg = get_console_bg_colors()
     match status:
         case "":
             return string
         case "a":
-            return f"\033[48;5;{g_bg}m{string}\033[0m"
+            return f"\033[48;5;028m{string}\033[0m"
         case "r":
-            return (
-                f"\033[48;5;{r_bg}m{replaced}\033[0m"
-                f"\033[48;5;{g_bg}m{string}\033[0m"
-            )
+            return f"\033[48;5;088m{replaced}\033[0m\033[48;5;028m{string}\033[0m"
         case "d":
-            return f"\033[48;5;{r_bg}m{string}\033[0m"
+            return f"\033[48;5;088m{string}\033[0m"
         case _:
             raise ValueError(f"invalid status: {status!r}")
-
-
-def get_console_bg_colors() -> tuple[str, str]:
-    """Get background colors for terminal output."""
-    return ("224", "194") if detect_console_color_scheme() == "light" else ("088", "028")
-
-
-def detect_console_color_scheme() -> str:
-    """
-    Detect terminal color scheme.
-
-    Returns
-    -------
-    str
-        "light" or "dark".
-    """
-    colorfgbg = os.environ.get("COLORFGBG")
-    if not colorfgbg:
-        return "dark"
-    try:
-        bg = int(colorfgbg.replace(",", ";").split(";")[-1])
-    except ValueError:
-        return "dark"
-    return "light" if is_light_ansi_color(bg) else "dark"
-
-
-def is_light_ansi_color(code: int) -> bool:
-    """Return whether an ansi 256-color code is light-like."""
-    if code < 0 or code > 255:
-        return False
-    if code < 16:
-        colors = [
-            (0, 0, 0),
-            (205, 49, 49),
-            (13, 188, 121),
-            (229, 229, 16),
-            (36, 114, 200),
-            (188, 63, 188),
-            (17, 168, 205),
-            (229, 229, 229),
-            (102, 102, 102),
-            (241, 76, 76),
-            (35, 209, 139),
-            (245, 245, 67),
-            (59, 142, 234),
-            (214, 112, 214),
-            (41, 184, 219),
-            (255, 255, 255),
-        ]
-        rgb = colors[code]
-    elif code < 232:
-        idx = code - 16
-        levels = [0, 95, 135, 175, 215, 255]
-        rgb = (
-            levels[idx // 36],
-            levels[(idx // 6) % 6],
-            levels[idx % 6],
-        )
-    else:
-        gray = 8 + (code - 232) * 10
-        rgb = (gray, gray, gray)
-    r, g, b = rgb
-    return (299 * r + 587 * g + 114 * b) / 1000 >= 128
 
 
 def colorful_span(
