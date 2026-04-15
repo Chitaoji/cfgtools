@@ -49,7 +49,7 @@ cfgtools.config({
 ```
 If user wants to check the changed items, run:
 ```py
->>> f.view_change()         # follow system theme (light/dark)
+>>> f.view_change()         # auto mode now uses light style
 >>> f.view_change("light")  # optimized for light/white backgrounds
 >>> f.view_change("dark")   # optimized for dark/black backgrounds
 ```
