@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Self
 
 from htmlmaster import HTMLTreeMaker
 
-from .css import AUTO_CHANGE_VIEW_CSS_STYLE, TREE_CSS_STYLE
+from .css import TREE_CSS_STYLE
 
 if TYPE_CHECKING:
     from ._typing import BasicObj, ColorScheme, DataObj, UnwrappedDataObj, WrapperStatus
@@ -104,12 +104,6 @@ def get_color_style(color_scheme: "ColorScheme", status: "WrapperStatus") -> str
 def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
     """Get background colors."""
     match color_scheme:
-        case "auto":
-            return [
-                "var(--cfgtools-text)",
-                "var(--cfgtools-red)",
-                "var(--cfgtools-green)",
-            ]
         case "dark":
             return ["#cccccc", "#4d2f2f", "#2f4d2f"]
         case "modern":
@@ -213,7 +207,7 @@ class BasicWrapper:
         _, _, string = is_change_view, colorful_func, repr(self.__obj)
         return len(string), string
 
-    def view_change(self, color_scheme: "ColorScheme" = "auto") -> "ChangeView":
+    def view_change(self, color_scheme: "ColorScheme" = "dark") -> "ChangeView":
         """View the change of self since initialized."""
         _ = color_scheme
         return ChangeView(self.repr(0, True), self.to_html(True, color_scheme))
@@ -298,7 +292,7 @@ class BasicWrapper:
         raise TypeError(f"{self.__desc()} is not convertible to 'None'")
 
     def to_html(
-        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "auto"
+        self, is_change_view: bool = False, color_scheme: "ColorScheme" = "dark"
     ) -> HTMLTreeMaker:
         """Return an HTMLTreeMaker object for representing self."""
         maker = self.get_html_node(is_change_view, color_scheme)
@@ -306,15 +300,13 @@ class BasicWrapper:
         main_maker = HTMLTreeMaker()
         main_maker.add(maker)
         main_maker.setrootstyle(TREE_CSS_STYLE)
-        if color_scheme == "auto":
-            main_maker.setrootstyle(AUTO_CHANGE_VIEW_CSS_STYLE)
         main_maker.setrootcls("cfgtools-tree")
         return main_maker
 
     def get_html_node(
         self,
         is_change_view: bool = False,
-        color_scheme: "ColorScheme" = "auto",
+        color_scheme: "ColorScheme" = "dark",
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         """
@@ -573,7 +565,7 @@ class DictBasicWrapper(BasicWrapper):
     def get_html_node(
         self,
         is_change_view: bool = False,
-        color_scheme: "ColorScheme" = "auto",
+        color_scheme: "ColorScheme" = "dark",
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         lenflat, flat = self.repr_flat(
@@ -810,7 +802,7 @@ class ListBasicWrapper(BasicWrapper):
     def get_html_node(
         self,
         is_change_view: bool = False,
-        color_scheme: "ColorScheme" = "auto",
+        color_scheme: "ColorScheme" = "dark",
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         lenflat, flat = self.repr_flat(
