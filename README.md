@@ -66,7 +66,10 @@ This project falls under the BSD 3-Clause License.
 
 ## History
 ### v0.1.0
-
+* Added/updated package metadata for the 0.1.0 release (via `pyproject.toml`) and aligned dependencies.
+* Improved HTML rendering for large trees by collapsing/paginating overflow nodes for better readability.
+* Enhanced `view_change()` display styles with explicit `light` / `dark` themes and refined auto-mode behavior for consistent output.
+* Fixed light-theme style detection issues in VS Code webviews.
 
 ### v0.0.9
 * Bugfix when reading text files.
