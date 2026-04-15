@@ -213,7 +213,7 @@ class BasicWrapper:
         _, _, string = is_change_view, colorful_func, repr(self.__obj)
         return len(string), string
 
-    def view_change(self, color_scheme: "ColorScheme" = "dark") -> "ChangeView":
+    def view_change(self, color_scheme: "ColorScheme" = "auto") -> "ChangeView":
         """View the change of self since initialized."""
         _ = color_scheme
         return ChangeView(self.repr(0, True), self.to_html(True, color_scheme))
@@ -392,9 +392,8 @@ class BasicWrapper:
         elif self.__obj == RETURN:
             self.__obj = lambda x: bool(recorder.setdefault("RETURN", x)) or True
         elif self.__obj == YIELD:
-            self.__obj = (
-                lambda x: bool(recorder.update(YIELD=recorder.get("YIELD", []) + [x]))
-                or True
+            self.__obj = lambda x: (
+                bool(recorder.update(YIELD=recorder.get("YIELD", []) + [x])) or True
             )
         return recorder
 
@@ -462,7 +461,7 @@ class DictBasicWrapper(BasicWrapper):
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
             self.__subrepr(k, v, is_change_view, seps, max_line_width, level, lines)
-        string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}" "}"
+        string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}}}"
         return string
 
     def __subrepr(
