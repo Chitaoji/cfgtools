@@ -17,7 +17,6 @@ from .css import TREE_CSS_STYLE
 
 if TYPE_CHECKING:
     from ._typing import BasicObj, ColorScheme, DataObj, UnwrappedDataObj, WrapperStatus
-    from .iowrapper import ConfigIOWrapper
 
 
 __all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER", "REPLACE"]
