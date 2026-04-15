@@ -112,11 +112,7 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
         case "light":
             return ["#1f2328", "#ffd8d3", "#d9f2d9"]
         case "auto":
-            return [
-                "var(--cfgtools-change-fg,#cccccc)",
-                "var(--cfgtools-change-del-bg,#4d2f2f)",
-                "var(--cfgtools-change-add-bg,#2f4d2f)",
-            ]
+            return ["#1f2328", "#ffd8d3", "#d9f2d9"]
         case _:
             raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
