@@ -55,14 +55,14 @@ def colorful_string(string: str, status: "WrapperStatus", replaced: str = "") ->
         case "":
             return string
         case "a":
-            return f"\033[48;5;120;38;5;0m{string}\033[0m"
+            return f"\033[48;5;194;38;5;0m{string}\033[0m"
         case "r":
             return (
-                f"\033[48;5;210;38;5;0m{replaced}\033[0m"
-                f"\033[48;5;120;38;5;0m{string}\033[0m"
+                f"\033[48;5;224;38;5;0m{replaced}\033[0m"
+                f"\033[48;5;194;38;5;0m{string}\033[0m"
             )
         case "d":
-            return f"\033[48;5;210;38;5;0m{string}\033[0m"
+            return f"\033[48;5;224;38;5;0m{string}\033[0m"
         case _:
             raise ValueError(f"invalid status: {status!r}")
 
