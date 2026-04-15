@@ -199,7 +199,7 @@ class BasicWrapper:
 
     def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
         """Represent self."""
-        return repr(self.__obj) if level >= 0 else self.repr_flat(is_change_view)
+        return repr(self.__obj)
 
     def repr_flat(
         self,
