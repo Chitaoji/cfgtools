@@ -9,6 +9,11 @@ NOTE: this module is private. All functions and objects are available in the mai
 __all__ = []
 
 TREE_CSS_STYLE = """<style type="text/css">
+.{0} {{
+    --cfgtools-change-fg: #1f2328;
+    --cfgtools-change-del-bg: #ffd8d3;
+    --cfgtools-change-add-bg: #d9f2d9;
+}}
 .{0} li.m {{
     display: block;
     position: relative;

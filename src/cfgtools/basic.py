@@ -17,7 +17,6 @@ from .css import TREE_CSS_STYLE
 
 if TYPE_CHECKING:
     from ._typing import BasicObj, ColorScheme, DataObj, UnwrappedDataObj, WrapperStatus
-    from .iowrapper import ConfigIOWrapper
 
 
 __all__ = ["MAX_LINE_WIDTH", "ANY", "RETURN", "YIELD", "NEVER", "REPLACE"]
@@ -50,29 +49,32 @@ NEVER = Flag("NEVER")
 REPLACE = Flag("REPLACE")
 
 
-def colorful_console(string: str, status: "WrapperStatus", replaced: str = "") -> str:
-    """Make string colorful in console."""
+def colorful_string(string: str, status: "WrapperStatus", replaced: str = "") -> str:
+    """Make a colorful string in console."""
     match status:
         case "":
             return string
         case "a":
-            return f"\033[48;5;028m{string}\033[0m"
+            return f"\033[48;5;194;38;5;0m{string}\033[0m"
         case "r":
-            return f"\033[48;5;088m{replaced}\033[0m\033[48;5;028m{string}\033[0m"
+            return (
+                f"\033[48;5;224;38;5;0m{replaced}\033[0m"
+                f"\033[48;5;194;38;5;0m{string}\033[0m"
+            )
         case "d":
-            return f"\033[48;5;088m{string}\033[0m"
+            return f"\033[48;5;224;38;5;0m{string}\033[0m"
         case _:
             raise ValueError(f"invalid status: {status!r}")
 
 
-def colorful_html(
+def colorful_span(
     color_scheme: "ColorScheme",
     string: str,
     status: "WrapperStatus",
     replaced: str = "",
 ) -> str:
-    """Make string colorful in html."""
-    color = colorful_style(color_scheme, status)
+    """Make a colorful span in html."""
+    color = get_color_style(color_scheme, status)
     match status:
         case "":
             return string
@@ -80,25 +82,42 @@ def colorful_html(
             return f"<span style={color}>{string}</span>"
         case "r":
             return (
-                f"<span style={colorful_style(color_scheme, 'd')}>{replaced}</span>"
+                f"<span style={get_color_style(color_scheme, 'd')}>{replaced}</span>"
                 f"<span style={color}>{string}</span>"
             )
         case _:
             raise ValueError(f"invalid status: {status!r}")
 
 
-def colorful_style(color_scheme: "ColorScheme", status: "WrapperStatus") -> str:
+def get_color_style(color_scheme: "ColorScheme", status: "WrapperStatus") -> str:
     """Return coloful css style."""
-    _, r, g = get_bg_colors(color_scheme)
+    text, r, g = get_bg_colors(color_scheme)
     match status:
         case "":
             return ""
         case "a" | "r":
-            return f"text-decoration:none;color:#cccccc;background-color:{g}"
+            return f"text-decoration:none;color:{text};background-color:{g}"
         case "d":
-            return f"text-decoration:none;color:#cccccc;background-color:{r}"
+            return f"text-decoration:none;color:{text};background-color:{r}"
         case _:
             raise ValueError(f"invalid status: {status!r}")
+
+
+def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
+    """Get background colors."""
+    match color_scheme:
+        case "dark":
+            return ["#cccccc", "#4d2f2f", "#2f4d2f"]
+        case "modern":
+            return ["#cccccc", "#701414", "#4e5d2d"]
+        case "high-intensty":
+            return ["#cccccc", "#701414", "#147014"]
+        case "light":
+            return ["#1f2328", "#ffd8d3", "#d9f2d9"]
+        case "auto":
+            return ["#1f2328", "#ffd8d3", "#d9f2d9"]
+        case _:
+            raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
 
 class BasicWrapper:
@@ -180,19 +199,19 @@ class BasicWrapper:
 
     def repr(self, level: int = 0, is_change_view: bool = False, /) -> str:
         """Represent self."""
-        return repr(self.__obj) if level >= 0 else self.repr_flat(is_change_view)
+        return repr(self.__obj)
 
     def repr_flat(
         self,
         is_change_view: bool = False,
-        colorful_func: Callable = colorful_console,
+        colorful_func: Callable = colorful_string,
         /,
     ) -> tuple[int, str]:
         """Represent self in one line."""
         _, _, string = is_change_view, colorful_func, repr(self.__obj)
         return len(string), string
 
-    def view_change(self, color_scheme: "ColorScheme" = "dark") -> "ChangeView":
+    def view_change(self, color_scheme: "ColorScheme" = "auto") -> "ChangeView":
         """View the change of self since initialized."""
         _ = color_scheme
         return ChangeView(self.repr(0, True), self.to_html(True, color_scheme))
@@ -371,9 +390,8 @@ class BasicWrapper:
         elif self.__obj == RETURN:
             self.__obj = lambda x: bool(recorder.setdefault("RETURN", x)) or True
         elif self.__obj == YIELD:
-            self.__obj = (
-                lambda x: bool(recorder.update(YIELD=recorder.get("YIELD", []) + [x]))
-                or True
+            self.__obj = lambda x: (
+                bool(recorder.update(YIELD=recorder.get("YIELD", []) + [x])) or True
             )
         return recorder
 
@@ -441,7 +459,7 @@ class DictBasicWrapper(BasicWrapper):
         max_line_width = self.get_max_line_width()
         for k, v in self.__obj.items():
             self.__subrepr(k, v, is_change_view, seps, max_line_width, level, lines)
-        string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}" "}"
+        string = "{\n" + "\n".join(lines) + f"\n{_sep(level)}}}"
         return string
 
     def __subrepr(
@@ -475,17 +493,17 @@ class DictBasicWrapper(BasicWrapper):
         _key = f"{k!r}: "
         _lenflat, _flat = v.repr_flat(is_change_view)
         if lines and (len(_head) + len(_key) + _lenflat + 2 <= max_line_width):
-            lines[-1] += colorful_console(f" {_key}{_flat},", _status)
+            lines[-1] += colorful_string(f" {_key}{_flat},", _status)
         elif len(seps) + len(_key) + _lenflat < max_line_width:
-            lines.append(colorful_console(f"{seps}{_key}{_flat},", _status))
+            lines.append(colorful_string(f"{seps}{_key}{_flat},", _status))
         else:
             _child = v.repr(level + 1, is_change_view)
-            lines.append(colorful_console(f"{seps}{_key}{_child},", _status))
+            lines.append(colorful_string(f"{seps}{_key}{_child},", _status))
 
     def repr_flat(
         self,
         is_change_view: bool = False,
-        colorful_func: Callable = colorful_console,
+        colorful_func: Callable = colorful_string,
         /,
     ) -> tuple[int, str]:
         if not is_change_view:
@@ -554,7 +572,7 @@ class DictBasicWrapper(BasicWrapper):
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         lenflat, flat = self.repr_flat(
-            is_change_view, partial(colorful_html, color_scheme)
+            is_change_view, partial(colorful_span, color_scheme)
         )
         if lenflat <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
@@ -583,7 +601,7 @@ class DictBasicWrapper(BasicWrapper):
         _status = status if status else v.get_status()
         node = v.get_html_node(is_change_view, color_scheme, _status)
         if is_change_view:
-            color = colorful_style(color_scheme, _status)
+            color = get_color_style(color_scheme, _status)
             node_value = f"{k!r}: {node.getval()}"
             if node.has_child():
                 node_value = f'<span style="{color}">' + node_value.replace(
@@ -712,17 +730,17 @@ class ListBasicWrapper(BasicWrapper):
         _head = lines[-1] if lines else ""
         _lenflat, _flat = x.repr_flat(is_change_view)
         if lines and (len(_head) + _lenflat + 2 <= max_line_width):
-            lines[-1] += colorful_console(f" {_flat},", _status)
+            lines[-1] += colorful_string(f" {_flat},", _status)
         elif len(seps) + _lenflat < max_line_width:
-            lines.append(colorful_console(f"{seps}{_flat},", _status))
+            lines.append(colorful_string(f"{seps}{_flat},", _status))
         else:
             _child = x.repr(level + 1, is_change_view)
-            lines.append(colorful_console(f"{seps}{_child},", _status))
+            lines.append(colorful_string(f"{seps}{_child},", _status))
 
     def repr_flat(
         self,
         is_change_view: bool = False,
-        colorful_func: Callable = colorful_console,
+        colorful_func: Callable = colorful_string,
         /,
     ) -> tuple[int, str]:
         if not is_change_view:
@@ -791,7 +809,7 @@ class ListBasicWrapper(BasicWrapper):
         status: "WrapperStatus" = "",
     ) -> HTMLTreeMaker:
         lenflat, flat = self.repr_flat(
-            is_change_view, partial(colorful_html, color_scheme)
+            is_change_view, partial(colorful_span, color_scheme)
         )
         if lenflat <= self.get_max_line_width():
             return HTMLTreeMaker(flat)
@@ -817,7 +835,7 @@ class ListBasicWrapper(BasicWrapper):
         _status = status if status else x.get_status()
         node = x.get_html_node(is_change_view, color_scheme, _status)
         if is_change_view:
-            color = colorful_style(color_scheme, _status)
+            color = get_color_style(color_scheme, _status)
             node_value = node.getval()
             if node.has_child():
                 node_value = f'<span style="{color}">' + node_value.replace(
@@ -881,19 +899,6 @@ class ChangeView:
 
     def __str__(self) -> str:
         return self.repr_str
-
-
-def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
-    """Get background colors."""
-    match color_scheme:
-        case "dark":
-            return ["#505050", "#4d2f2f", "#2f4d2f"]
-        case "modern":
-            return ["#505050", "#701414", "#4e5d2d"]
-        case "high-intensty":
-            return ["#505050", "#701414", "#147014"]
-        case _:
-            raise ValueError(f"invalid color scheme: {color_scheme!r}")
 
 
 def _sep(level: int) -> str:

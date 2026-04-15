@@ -55,19 +55,17 @@ This project falls under the BSD 3-Clause License.
 
 import lazyr
 
-lazyr.VERBOSE = 0
-lazyr.register("yaml")
-lazyr.register(".test_case")
+with lazyr.setverbose(0):
+    lazyr.register("yaml")
+    lazyr.register(".test_case")
 
-# pylint: disable=wrong-import-position
-from . import basic, core, iowrapper, reader, test_case
-from ._version import __version__
+from . import basic, core, iowrapper, reader, testcases
 from .basic import *
 from .core import *
 from .iowrapper import *
 from .reader import *
 
-__all__: list[str] = ["test_case"]
+__all__: list[str] = ["testcases"]
 __all__.extend(core.__all__)
 __all__.extend(iowrapper.__all__)
 __all__.extend(reader.__all__)

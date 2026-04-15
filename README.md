@@ -49,7 +49,9 @@ cfgtools.config({
 ```
 If user wants to check the changed items, run:
 ```py
->>> f.view_change()
+>>> f.view_change()         # auto mode now uses light style
+>>> f.view_change("light")  # optimized for light/white backgrounds
+>>> f.view_change("dark")   # optimized for dark/black backgrounds
 ```
 
 ## See Also
@@ -63,12 +65,16 @@ If user wants to check the changed items, run:
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.1.0
+* Improved HTML rendering for large trees by collapsing/paginating overflow nodes for better readability.
+* Enhanced `view_change()` display styles with explicit `light` / `dark` themes and refined auto-mode behavior for consistent output.
+
 ### v0.0.9
 * Bugfix when reading text files.
 
 ### v0.0.8
-* Add a simple cli command `cfg [OPTIONS] FILENAME`.
-* Rename `ConfigIOWrapper.safematch()` to `ConfigIOWrapper.adapt()`.
+* Added a simple cli command `cfg [OPTIONS] FILENAME`.
+* Renamed `ConfigIOWrapper.safematch()` to `ConfigIOWrapper.adapt()`.
 
 ### v0.0.7
 * New method for `BasicWrapper`: `*.asstr()`, `*.asint()`, `*.asfloat()`, `*.asbool()`, `*.asnone()`.

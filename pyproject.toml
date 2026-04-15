@@ -4,13 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfgtools"
-version = "0.0.9"
+version = "0.1.0"
 dependencies = [
   "pyyaml",
   "lazyr",
   "Faker",
   "htmlmaster",
   "toml",
+  "click"
 ]
 requires-python = ">=3.12"
 authors = [
@@ -34,4 +35,4 @@ Documentation = "https://github.com/Chitaoji/cfgtools/blob/main/README.md"
 Repository = "https://github.com/Chitaoji/cfgtools/"
 
 [project.scripts]
-cfg = "cfgtools.cli:run"
+cfg = "cfgtools.__main__:run"
