@@ -21,6 +21,14 @@ TREE_CSS_STYLE = """<style type="text/css">
         --cfgtools-change-add-bg: #d9f2d9;
     }}
 }}
+/* VS Code webviews do not always evaluate prefers-color-scheme correctly. */
+.vscode-light .{0},
+body[data-vscode-theme-kind="vscode-light"] .{0},
+body[data-vscode-theme-kind="vscode-high-contrast-light"] .{0} {{
+    --cfgtools-change-fg: #1f2328;
+    --cfgtools-change-del-bg: #ffd8d3;
+    --cfgtools-change-add-bg: #d9f2d9;
+}}
 .{0} li.m {{
     display: block;
     position: relative;
