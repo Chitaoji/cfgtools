@@ -89,14 +89,14 @@ def colorful_span(
 
 def get_color_style(color_scheme: "ColorScheme", status: "WrapperStatus") -> str:
     """Return coloful css style."""
-    _, r, g = get_bg_colors(color_scheme)
+    text, r, g = get_bg_colors(color_scheme)
     match status:
         case "":
             return ""
         case "a" | "r":
-            return f"text-decoration:none;color:#cccccc;background-color:{g}"
+            return f"text-decoration:none;color:{text};background-color:{g}"
         case "d":
-            return f"text-decoration:none;color:#cccccc;background-color:{r}"
+            return f"text-decoration:none;color:{text};background-color:{r}"
         case _:
             raise ValueError(f"invalid status: {status!r}")
 
@@ -105,11 +105,19 @@ def get_bg_colors(color_scheme: "ColorScheme") -> tuple[str, str, str]:
     """Get background colors."""
     match color_scheme:
         case "dark":
-            return ["#505050", "#4d2f2f", "#2f4d2f"]
+            return ["#cccccc", "#4d2f2f", "#2f4d2f"]
         case "modern":
-            return ["#505050", "#701414", "#4e5d2d"]
+            return ["#cccccc", "#701414", "#4e5d2d"]
         case "high-intensty":
-            return ["#505050", "#701414", "#147014"]
+            return ["#cccccc", "#701414", "#147014"]
+        case "light":
+            return ["#1f2328", "#ffd8d3", "#d9f2d9"]
+        case "auto":
+            return [
+                "var(--cfgtools-change-fg,#cccccc)",
+                "var(--cfgtools-change-del-bg,#4d2f2f)",
+                "var(--cfgtools-change-add-bg,#2f4d2f)",
+            ]
         case _:
             raise ValueError(f"invalid color scheme: {color_scheme!r}")
 

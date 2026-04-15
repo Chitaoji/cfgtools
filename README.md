@@ -50,6 +50,8 @@ cfgtools.config({
 If user wants to check the changed items, run:
 ```py
 >>> f.view_change()
+>>> f.view_change("light")  # optimized for light/white backgrounds
+>>> f.view_change("auto")   # follow system theme (light/dark)
 ```
 
 ## See Also
